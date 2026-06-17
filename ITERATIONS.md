@@ -56,5 +56,10 @@ Screenshots antes/después en `screenshots/iterN-*` (ignorados por git).
 - **Cambio:** en `src/world/Player.jsx`, `dtar = atan2(ddx, ddz) - π/2`; además orientación inicial del perro (`rotation y = π/2`) para que no aparezca de lado en reposo.
 - **Efecto:** el hocico apunta a la dirección de avance.
 
+## Iteración 11 — El perro corre/galopa al hacer sprint
+- **Idea:** que el perro corra/anime distinto al hacer sprint.
+- **Cambio:** en `src/world/Player.jsx`, al correr el catch-up sube (0.18→0.26) para que no se quede atrás; gait con salto vertical ligado a la velocidad real (`dogGait`), amplitud/frecuencia mayor al correr (amp 0.16→0.34) y trote suave al caminar; el perro vuelve al suelo en reposo.
+- **Efecto:** el perro trota al caminar y galopa visiblemente al correr, siguiendo el ritmo.
+
 ---
 **Estado del loop:** 8 iteraciones completadas. Visual: cielo, luz, sombras de contacto, agua, atmósfera. Jugabilidad/bugs: avatar y mascota asentados sobre el suelo (ya no se hunden), sprint con Shift y con joystick a fondo. Lo que queda es de menor impacto o requeriría assets/dependencias externas (modelo riggeado para el avatar vía Mixamo+useGLTF, HDRI local para reflejos sin depender del CDN, texturas de suelo).

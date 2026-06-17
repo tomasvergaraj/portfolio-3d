@@ -118,6 +118,7 @@ export function Player() {
   const trail = useRef([])
   const lastNearby = useRef(null)
   const walk = useRef(0)
+  const dogGait = useRef(0)
 
   useFrame((state, dt) => {
     const g = groupRef.current
@@ -160,16 +161,24 @@ export function Player() {
       const tgt = trail.current[trail.current.length - DOG_LAG]
       const px = dog.position.x
       const pz = dog.position.z
-      dog.position.x += (tgt.x - px) * 0.18
-      dog.position.z += (tgt.z - pz) * 0.18
+      // Al correr, el perro acelera para no quedarse atrás (catch-up mayor).
+      const follow = sprint ? 0.26 : 0.18
+      dog.position.x += (tgt.x - px) * follow
+      dog.position.z += (tgt.z - pz) * follow
       const ddx = dog.position.x - px
       const ddz = dog.position.z - pz
-      if (Math.hypot(ddx, ddz) > 0.001) {
+      const step = Math.hypot(ddx, ddz)
+      if (step > 0.001) {
         // El perro mira hacia +x en su modelo; restamos π/2 para que el hocico
         // apunte a la dirección de avance en vez de caminar de lado.
         const dtar = Math.atan2(ddx, ddz) - Math.PI / 2
         dog.rotation.y = lerpAngle(dog.rotation.y, dtar, 0.25)
       }
+      // Galope: salto más rápido y marcado al correr; trote suave al caminar.
+      const running = step > 0.004
+      dogGait.current += step * (sprint ? 11 : 7)
+      const amp = sprint ? 0.34 : 0.16
+      dog.position.y = GROUND_Y + (running ? Math.abs(Math.sin(dogGait.current)) * amp : 0)
     }
 
     // Cámara que persigue por lerp
