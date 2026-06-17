@@ -29,6 +29,10 @@ const STATION_POS = STATIONS.map((s) => {
   return { id: s.id, x, z }
 })
 
+// Vectores temporales reutilizados por la cámara (evita basura por frame).
+const _camDesired = new THREE.Vector3()
+const _lookDesired = new THREE.Vector3()
+
 function Avatar({ groupRef, bodyRef }) {
   return (
     <group ref={groupRef} position={[0, GROUND_Y - 0.2, 6]}>
@@ -119,6 +123,9 @@ export function Player() {
   const lastNearby = useRef(null)
   const walk = useRef(0)
   const dogGait = useRef(0)
+  // Punto al que mira la cámara, interpolado para transiciones suaves.
+  // Se inicia en el objetivo del avatar para no barrer al cargar.
+  const lookAt = useRef(new THREE.Vector3(0, GROUND_Y + 0.5, 6))
 
   useFrame((state, dt) => {
     const g = groupRef.current
@@ -126,7 +133,8 @@ export function Player() {
     // dt puede dispararse tras un cambio de pestaña; lo acotamos.
     const d = Math.min(dt, 0.05)
 
-    const frozen = useStore.getState().active !== null
+    const active = useStore.getState().active
+    const frozen = active !== null
     const { x, z, moving, sprint } = frozen
       ? { x: 0, z: 0, moving: false, sprint: false }
       : readInput()
@@ -181,15 +189,30 @@ export function Player() {
       dog.position.y = GROUND_Y + (running ? Math.abs(Math.sin(dogGait.current)) * amp : 0)
     }
 
-    // Cámara que persigue por lerp
+    // Cámara: persigue al avatar, y al abrir una sección hace un dolly suave
+    // hacia el monumento de esa estación (y vuelve al cerrar). El lookAt también
+    // se interpola para que la transición entrar/salir no salte.
     const cam = state.camera
-    const desired = new THREE.Vector3(
-      g.position.x + CAM_OFFSET.x,
-      CAM_OFFSET.y,
-      g.position.z + CAM_OFFSET.z
-    )
-    cam.position.lerp(desired, 0.08)
-    cam.lookAt(g.position.x, g.position.y + 1.2, g.position.z)
+    const station = active ? STATION_POS.find((s) => s.id === active) : null
+    if (station) {
+      _camDesired.set(
+        station.x + CAM_OFFSET.x * 0.52,
+        CAM_OFFSET.y * 0.8,
+        station.z + CAM_OFFSET.z * 0.52
+      )
+      _lookDesired.set(station.x, 2.4, station.z)
+    } else {
+      _camDesired.set(
+        g.position.x + CAM_OFFSET.x,
+        CAM_OFFSET.y,
+        g.position.z + CAM_OFFSET.z
+      )
+      _lookDesired.set(g.position.x, g.position.y + 1.2, g.position.z)
+    }
+    const ease = 1 - Math.pow(0.001, d) // suavizado estable ante saltos de dt
+    cam.position.lerp(_camDesired, station ? ease * 0.9 : ease)
+    lookAt.current.lerp(_lookDesired, station ? ease * 0.9 : ease)
+    cam.lookAt(lookAt.current)
 
     // Proximidad a estaciones
     let nearest = null

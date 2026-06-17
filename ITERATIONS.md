@@ -61,5 +61,10 @@ Screenshots antes/después en `screenshots/iterN-*` (ignorados por git).
 - **Cambio:** en `src/world/Player.jsx`, al correr el catch-up sube (0.18→0.26) para que no se quede atrás; gait con salto vertical ligado a la velocidad real (`dogGait`), amplitud/frecuencia mayor al correr (amp 0.16→0.34) y trote suave al caminar; el perro vuelve al suelo en reposo.
 - **Efecto:** el perro trota al caminar y galopa visiblemente al correr, siguiendo el ritmo.
 
+## Iteración 12 — Cámara cinematográfica al entrar/salir de secciones
+- **Idea:** animación de cámara suave al entrar/salir de secciones.
+- **Cambio:** en `src/world/Player.jsx`, al abrir una sección la cámara hace un dolly hacia el monumento de esa estación (offset ×0.52, altura ×0.8) y vuelve a seguir al avatar al cerrar; el `lookAt` se interpola con un ref propio. Suavizado independiente del framerate (`1 - 0.001^dt`) y vectores temporales reutilizados.
+- **Efecto:** transición entrar/salir suave y con intención; sin saltos de cámara.
+
 ---
-**Estado del loop:** 8 iteraciones completadas. Visual: cielo, luz, sombras de contacto, agua, atmósfera. Jugabilidad/bugs: avatar y mascota asentados sobre el suelo (ya no se hunden), sprint con Shift y con joystick a fondo. Lo que queda es de menor impacto o requeriría assets/dependencias externas (modelo riggeado para el avatar vía Mixamo+useGLTF, HDRI local para reflejos sin depender del CDN, texturas de suelo).
+**Estado del loop:** 12 iteraciones completadas. Visual: cielo, luz, sombras de contacto, agua, atmósfera. Jugabilidad/bugs: avatar y mascota asentados sobre el suelo, sprint con Shift y con joystick a fondo, mascota mirando hacia donde avanza, mascota que galopa al correr, etiquetas 2D ocultas con el modal, cámara cinematográfica al entrar/salir de secciones. **Pendiente que requiere asset externo:** cambiar el avatar de primitivas por un modelo `.glb` riggeado (Mixamo) — el proxy bloquea descargas, así que el usuario debe aportar el archivo en `public/`. También opcional: HDRI local para reflejos sin depender del CDN.
