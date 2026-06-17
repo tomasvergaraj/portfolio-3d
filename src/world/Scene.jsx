@@ -18,12 +18,15 @@ export function Scene({ reducedMotion = false }) {
       <Sky />
       <fog attach="fog" args={['#dbeaf3', 70, 165]} />
 
-      {/* Iluminación analítica: funciona aunque el HDRI no cargue */}
-      <hemisphereLight args={['#dcebff', '#9dbe7a', 0.65]} />
-      <ambientLight intensity={0.25} />
+      {/* Iluminación analítica con dirección y temperatura: funciona aunque el
+          HDRI no cargue. Key cálida (sol) + relleno frío opuesto que modela las
+          formas low-poly; ambiente bajo para conservar contraste. */}
+      <hemisphereLight args={['#dcebff', '#9dbe7a', 0.5]} />
+      <ambientLight intensity={0.18} />
       <directionalLight
         position={[14, 20, 8]}
-        intensity={1.5}
+        intensity={1.7}
+        color="#fff1d4"
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0005}
@@ -34,6 +37,8 @@ export function Scene({ reducedMotion = false }) {
         shadow-camera-top={30}
         shadow-camera-bottom={-30}
       />
+      {/* Relleno frío desde el lado opuesto: separa las siluetas del fondo */}
+      <directionalLight position={[-12, 9, -10]} intensity={0.45} color="#bcd7ff" />
 
       {/* Iluminación basada en imagen para reflejos suaves; si la red no la
           entrega, la escena ya está iluminada y esto simplemente no aparece. */}
