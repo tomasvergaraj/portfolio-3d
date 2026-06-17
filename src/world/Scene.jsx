@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react'
-import { Environment, ContactShadows } from '@react-three/drei'
+import { Environment, ContactShadows, Sparkles } from '@react-three/drei'
 import { Island } from './Island'
 import { Sky } from './Sky'
 import { Water } from './Water'
@@ -69,6 +69,18 @@ export function Scene({ reducedMotion = false }) {
       ))}
 
       <Player />
+
+      {/* Motas que flotan en el aire y captan la luz: dan vida y un aire cálido
+          al mundo. Se congelan con prefers-reduced-motion. */}
+      <Sparkles
+        count={42}
+        scale={[44, 12, 44]}
+        position={[0, 6, 0]}
+        size={3}
+        speed={reducedMotion ? 0 : 0.35}
+        opacity={0.5}
+        color="#fff3d6"
+      />
 
       <Effects />
     </>

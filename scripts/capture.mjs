@@ -17,7 +17,7 @@ import { mkdir } from 'node:fs/promises'
 const URL = process.argv[2] || 'http://localhost:5173'
 const OUT = process.argv[3] || './screenshots/latest'
 
-const SETTLE_MS = 4500 // tiempo para que carguen HDRI + fuentes + primer render
+const SETTLE_MS = 6000 // tiempo para que carguen HDRI + fuentes + primer render
 
 async function main() {
   await mkdir(OUT, { recursive: true })

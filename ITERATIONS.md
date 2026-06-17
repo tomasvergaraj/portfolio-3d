@@ -22,3 +22,11 @@ Screenshots antes/después en `screenshots/iterN-*` (ignorados por git).
 - **Problema:** el mar era un teal plano sin profundidad.
 - **Cambio:** en `src/world/Water.jsx`, gradiente radial por vértice (`#5fc6c0` orilla → `#1f5f86` mar adentro) vía atributo `color` + `vertexColors`; más specular (roughness 0.22, metalness 0.25).
 - **Efecto:** el mar se lee con fondo y profundidad; capta mejor el cielo. Mantiene oleaje low-poly.
+
+## Iteración 5 — Atmósfera viva (motas)
+- **Problema:** el aire estaba "vacío"; faltaba vida/ambiente premium.
+- **Cambio:** `<Sparkles>` (drei) en `src/world/Scene.jsx` (42 motas cálidas, sutiles), congeladas con `reducedMotion`. Subido `SETTLE_MS` del script de captura a 6000 ms (la escena carga un poco más).
+- **Efecto:** motas que flotan y captan la luz; mundo más vivo sin recargar el render.
+
+---
+**Estado del loop:** 5 iteraciones de alto impacto y bajo riesgo completadas (cielo, luz, sombras de contacto, agua, atmósfera). Lo que queda es de menor impacto o requeriría assets/dependencias externas (modelo riggeado para el avatar vía Mixamo+useGLTF, HDRI local para reflejos sin depender del CDN, texturas de suelo). Detención según lo pedido (~5 iteraciones auto-ritmo).
