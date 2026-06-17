@@ -21,3 +21,9 @@ export const useStore = create((set, get) => ({
   setProgress: (p) => set({ progress: p }),
   setReady: () => set({ ready: true }),
 }))
+
+// En desarrollo, exponemos el store para que el script de captura (Playwright)
+// pueda abrir paneles de forma determinista. No afecta a producción.
+if (import.meta.env?.DEV && typeof window !== 'undefined') {
+  window.__store = useStore
+}
