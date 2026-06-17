@@ -44,5 +44,11 @@ Screenshots antes/después en `screenshots/iterN-*` (ignorados por git).
 - **Cambio:** `src/ui/Joystick.jsx` activa `touch.boost = true` al empujar el stick a fondo (>92% del radio) y lo resetea al soltar. Completa el sprint que la iter 7 dejó preparado para táctil.
 - **Efecto:** en móvil se corre empujando el joystick al máximo; al centro se camina.
 
+## Iteración 9 — Ocultar etiquetas 2D con el modal abierto
+- **Pedido:** esconder las etiquetas 2D al abrir un modal (se colaban "Sobre mí" sobre el panel).
+- **Causa:** las etiquetas usan `<Html>` de drei, que se dibuja en el DOM fuera del lienzo, así que aparecían por encima del modal.
+- **Cambio:** en `src/world/StationMarker.jsx`, no se renderiza la etiqueta cuando `active !== null` (`modalOpen`).
+- **Efecto:** con un panel abierto, el modal queda limpio.
+
 ---
 **Estado del loop:** 8 iteraciones completadas. Visual: cielo, luz, sombras de contacto, agua, atmósfera. Jugabilidad/bugs: avatar y mascota asentados sobre el suelo (ya no se hunden), sprint con Shift y con joystick a fondo. Lo que queda es de menor impacto o requeriría assets/dependencias externas (modelo riggeado para el avatar vía Mixamo+useGLTF, HDRI local para reflejos sin depender del CDN, texturas de suelo).

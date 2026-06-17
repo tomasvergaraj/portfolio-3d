@@ -95,6 +95,9 @@ export function StationMarker({ station, position }) {
   const [hovered, setHovered] = useState(false)
   const nearby = useStore((s) => s.nearby === station.id)
   const open = useStore((s) => s.open)
+  // Con un panel abierto ocultamos las etiquetas 2D: si no, se cuelan por
+  // encima del modal (las dibuja <Html> en el DOM, fuera del lienzo).
+  const modalOpen = useStore((s) => s.active !== null)
 
   useFrame((state) => {
     const t = state.clock.elapsedTime
@@ -145,7 +148,8 @@ export function StationMarker({ station, position }) {
         <meshBasicMaterial color={station.color} transparent opacity={0.25} toneMapped={false} />
       </mesh>
 
-      {/* Etiqueta flotante */}
+      {/* Etiqueta flotante (oculta mientras hay un panel abierto) */}
+      {!modalOpen && (
       <Html position={[0, 5.4, 0]} center distanceFactor={16} occlude={false} pointerEvents="none">
         <div
           style={{
@@ -171,6 +175,7 @@ export function StationMarker({ station, position }) {
           {station.name}
         </div>
       </Html>
+      )}
     </group>
   )
 }
