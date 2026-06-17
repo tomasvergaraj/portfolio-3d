@@ -28,5 +28,11 @@ Screenshots antes/después en `screenshots/iterN-*` (ignorados por git).
 - **Cambio:** `<Sparkles>` (drei) en `src/world/Scene.jsx` (42 motas cálidas, sutiles), congeladas con `reducedMotion`. Subido `SETTLE_MS` del script de captura a 6000 ms (la escena carga un poco más).
 - **Efecto:** motas que flotan y captan la luz; mundo más vivo sin recargar el render.
 
+## Iteración 6 — Asentar avatar y mascota sobre el suelo
+- **Problema (reportado):** el perro se veía hundido bajo el mapa; el avatar también quedaba parcialmente enterrado (lo disimulaba la sombra de contacto).
+- **Causa:** ambos grupos en `y=0`, pero la superficie de la isla está en `y≈0.7`.
+- **Cambio:** en `src/world/Player.jsx`, constante `GROUND_Y=0.7`; avatar en `y=GROUND_Y-0.2` (pies sobre el suelo) y perro en `y=GROUND_Y` (patas sobre el suelo). Sombra de contacto bajada a `y=0.72` en `src/world/Scene.jsx` para captarlos.
+- **Efecto:** avatar y perro se paran correctamente sobre la isla.
+
 ---
 **Estado del loop:** 5 iteraciones de alto impacto y bajo riesgo completadas (cielo, luz, sombras de contacto, agua, atmósfera). Lo que queda es de menor impacto o requeriría assets/dependencias externas (modelo riggeado para el avatar vía Mixamo+useGLTF, HDRI local para reflejos sin depender del CDN, texturas de suelo). Detención según lo pedido (~5 iteraciones auto-ritmo).

@@ -52,7 +52,7 @@ export function Scene({ reducedMotion = false }) {
           y al perro en movimiento). Complementa las sombras direccionales y da
           sensación de oclusión de contacto en la paleta low-poly. */}
       <ContactShadows
-        position={[0, 0.77, 0]}
+        position={[0, 0.72, 0]}
         scale={52}
         resolution={1024}
         blur={2.6}

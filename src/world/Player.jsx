@@ -10,6 +10,9 @@ const CLAMP_R = 20.5
 const INTERACT_R = 3.6
 const CAM_OFFSET = new THREE.Vector3(0, 12.5, 16.5)
 const DOG_LAG = 26
+// Altura de la superficie caminable de la isla (tapa de pasto en y≈0.7). El
+// avatar y el perro se asientan sobre ella; antes quedaban hundidos en el suelo.
+const GROUND_Y = 0.7
 
 // Interpola ángulos por el camino más corto (evita el salto en ±π).
 function lerpAngle(a, b, t) {
@@ -27,7 +30,7 @@ const STATION_POS = STATIONS.map((s) => {
 
 function Avatar({ groupRef, bodyRef }) {
   return (
-    <group ref={groupRef} position={[0, 0, 6]}>
+    <group ref={groupRef} position={[0, GROUND_Y - 0.2, 6]}>
       <group ref={bodyRef}>
         {/* Cuerpo */}
         <mesh castShadow position={[0, 1, 0]}>
@@ -61,7 +64,7 @@ function Avatar({ groupRef, bodyRef }) {
 
 function Dog({ dogRef }) {
   return (
-    <group ref={dogRef} position={[0, 0, 7.5]}>
+    <group ref={dogRef} position={[0, GROUND_Y, 7.5]}>
       {/* Cuerpo alargado */}
       <mesh castShadow position={[0, 0.5, 0]} rotation={[0, 0, Math.PI / 2]}>
         <capsuleGeometry args={[0.26, 0.95, 8, 12]} />
