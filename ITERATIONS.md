@@ -17,3 +17,8 @@ Screenshots antes/después en `screenshots/iterN-*` (ignorados por git).
 - **Problema:** árboles, rocas y monumentos se sentían flotando; el avatar usaba una sombra circular falsa.
 - **Cambio:** `<ContactShadows>` (drei) en `src/world/Scene.jsx` cubriendo la isla (scale 52, blur 2.6, opacity 0.42), dinámico para incluir avatar/perro. Eliminada la sombra circular falsa en `src/world/Player.jsx`.
 - **Efecto:** todo asentado en el suelo con oclusión de contacto suave; más profundidad.
+
+## Iteración 4 — Agua con profundidad
+- **Problema:** el mar era un teal plano sin profundidad.
+- **Cambio:** en `src/world/Water.jsx`, gradiente radial por vértice (`#5fc6c0` orilla → `#1f5f86` mar adentro) vía atributo `color` + `vertexColors`; más specular (roughness 0.22, metalness 0.25).
+- **Efecto:** el mar se lee con fondo y profundidad; capta mejor el cielo. Mantiene oleaje low-poly.
