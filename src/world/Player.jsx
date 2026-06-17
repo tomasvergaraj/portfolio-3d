@@ -1,0 +1,201 @@
+import React, { useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
+import * as THREE from 'three'
+import { readInput } from '../controls/input'
+import { useStore } from '../store'
+import { STATIONS, stationPosition } from '../data/stations'
+
+const SPEED = 6.4
+const CLAMP_R = 20.5
+const INTERACT_R = 3.6
+const CAM_OFFSET = new THREE.Vector3(0, 12.5, 16.5)
+const DOG_LAG = 26
+
+// Interpola ángulos por el camino más corto (evita el salto en ±π).
+function lerpAngle(a, b, t) {
+  let diff = b - a
+  while (diff > Math.PI) diff -= Math.PI * 2
+  while (diff < -Math.PI) diff += Math.PI * 2
+  return a + diff * t
+}
+
+// Posiciones precalculadas de las estaciones (para la proximidad).
+const STATION_POS = STATIONS.map((s) => {
+  const [x, , z] = stationPosition(s.angle)
+  return { id: s.id, x, z }
+})
+
+function Avatar({ groupRef, bodyRef }) {
+  return (
+    <group ref={groupRef} position={[0, 0, 6]}>
+      <group ref={bodyRef}>
+        {/* Cuerpo */}
+        <mesh castShadow position={[0, 1, 0]}>
+          <capsuleGeometry args={[0.45, 0.7, 8, 16]} />
+          <meshStandardMaterial color="#2f6bff" roughness={0.6} />
+        </mesh>
+        {/* Cabeza */}
+        <mesh castShadow position={[0, 1.95, 0]}>
+          <sphereGeometry args={[0.42, 24, 24]} />
+          <meshStandardMaterial color="#ffe0c2" roughness={0.8} />
+        </mesh>
+        {/* Ojos (frente +z) */}
+        <mesh position={[0.15, 2, 0.36]}>
+          <sphereGeometry args={[0.06, 12, 12]} />
+          <meshStandardMaterial color="#16202e" />
+        </mesh>
+        <mesh position={[-0.15, 2, 0.36]}>
+          <sphereGeometry args={[0.06, 12, 12]} />
+          <meshStandardMaterial color="#16202e" />
+        </mesh>
+        {/* Pelo */}
+        <mesh castShadow position={[0, 2.18, -0.04]}>
+          <sphereGeometry args={[0.44, 20, 20, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color="#3a2a1c" roughness={1} />
+        </mesh>
+      </group>
+      {/* Sombra de contacto simple bajo el avatar */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.76, 0]}>
+        <circleGeometry args={[0.6, 20]} />
+        <meshBasicMaterial color="#000000" transparent opacity={0.12} />
+      </mesh>
+    </group>
+  )
+}
+
+function Dog({ dogRef }) {
+  return (
+    <group ref={dogRef} position={[0, 0, 7.5]}>
+      {/* Cuerpo alargado */}
+      <mesh castShadow position={[0, 0.5, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <capsuleGeometry args={[0.26, 0.95, 8, 12]} />
+        <meshStandardMaterial color="#a86a3a" roughness={0.85} />
+      </mesh>
+      {/* Cabeza */}
+      <mesh castShadow position={[0.72, 0.62, 0]}>
+        <sphereGeometry args={[0.3, 18, 18]} />
+        <meshStandardMaterial color="#b5743f" roughness={0.85} />
+      </mesh>
+      {/* Hocico */}
+      <mesh castShadow position={[1.0, 0.55, 0]}>
+        <boxGeometry args={[0.3, 0.22, 0.24]} />
+        <meshStandardMaterial color="#8a5630" roughness={0.85} />
+      </mesh>
+      {/* Orejas */}
+      <mesh position={[0.66, 0.78, 0.22]} rotation={[0.3, 0, 0]}>
+        <boxGeometry args={[0.22, 0.34, 0.06]} />
+        <meshStandardMaterial color="#7c4a28" roughness={0.9} />
+      </mesh>
+      <mesh position={[0.66, 0.78, -0.22]} rotation={[-0.3, 0, 0]}>
+        <boxGeometry args={[0.22, 0.34, 0.06]} />
+        <meshStandardMaterial color="#7c4a28" roughness={0.9} />
+      </mesh>
+      {/* Patas */}
+      {[
+        [0.55, 0.18],
+        [-0.55, 0.18],
+        [0.55, -0.18],
+        [-0.55, -0.18],
+      ].map(([x, z], i) => (
+        <mesh key={i} castShadow position={[x, 0.18, z]}>
+          <cylinderGeometry args={[0.09, 0.09, 0.36, 8]} />
+          <meshStandardMaterial color="#8a5630" roughness={0.9} />
+        </mesh>
+      ))}
+      {/* Cola */}
+      <mesh position={[-0.7, 0.62, 0]} rotation={[0, 0, 0.7]}>
+        <cylinderGeometry args={[0.05, 0.1, 0.5, 8]} />
+        <meshStandardMaterial color="#a86a3a" roughness={0.9} />
+      </mesh>
+    </group>
+  )
+}
+
+export function Player() {
+  const groupRef = useRef()
+  const bodyRef = useRef()
+  const dogRef = useRef()
+  const trail = useRef([])
+  const lastNearby = useRef(null)
+  const walk = useRef(0)
+
+  useFrame((state, dt) => {
+    const g = groupRef.current
+    if (!g) return
+    // dt puede dispararse tras un cambio de pestaña; lo acotamos.
+    const d = Math.min(dt, 0.05)
+
+    const frozen = useStore.getState().active !== null
+    const { x, z, moving } = frozen ? { x: 0, z: 0, moving: false } : readInput()
+
+    if (moving) {
+      g.position.x += x * SPEED * d
+      g.position.z += z * SPEED * d
+      const target = Math.atan2(x, z)
+      g.rotation.y = lerpAngle(g.rotation.y, target, 0.2)
+    }
+
+    // Límite circular de la isla
+    const r = Math.hypot(g.position.x, g.position.z)
+    if (r > CLAMP_R) {
+      g.position.x *= CLAMP_R / r
+      g.position.z *= CLAMP_R / r
+    }
+
+    // Balanceo al caminar
+    walk.current += moving ? d * 10 : 0
+    if (bodyRef.current) {
+      bodyRef.current.position.y = moving ? Math.abs(Math.sin(walk.current)) * 0.12 : 0
+    }
+
+    // Estela para el perro
+    trail.current.push({ x: g.position.x, z: g.position.z })
+    if (trail.current.length > DOG_LAG + 30) trail.current.shift()
+    const dog = dogRef.current
+    if (dog && trail.current.length > DOG_LAG) {
+      const tgt = trail.current[trail.current.length - DOG_LAG]
+      const px = dog.position.x
+      const pz = dog.position.z
+      dog.position.x += (tgt.x - px) * 0.18
+      dog.position.z += (tgt.z - pz) * 0.18
+      const ddx = dog.position.x - px
+      const ddz = dog.position.z - pz
+      if (Math.hypot(ddx, ddz) > 0.001) {
+        const dtar = Math.atan2(ddx, ddz)
+        dog.rotation.y = lerpAngle(dog.rotation.y, dtar, 0.25)
+      }
+    }
+
+    // Cámara que persigue por lerp
+    const cam = state.camera
+    const desired = new THREE.Vector3(
+      g.position.x + CAM_OFFSET.x,
+      CAM_OFFSET.y,
+      g.position.z + CAM_OFFSET.z
+    )
+    cam.position.lerp(desired, 0.08)
+    cam.lookAt(g.position.x, g.position.y + 1.2, g.position.z)
+
+    // Proximidad a estaciones
+    let nearest = null
+    let nd = INTERACT_R
+    for (const s of STATION_POS) {
+      const dist = Math.hypot(g.position.x - s.x, g.position.z - s.z)
+      if (dist < nd) {
+        nd = dist
+        nearest = s.id
+      }
+    }
+    if (nearest !== lastNearby.current) {
+      lastNearby.current = nearest
+      useStore.getState().setNearby(nearest)
+    }
+  })
+
+  return (
+    <>
+      <Avatar groupRef={groupRef} bodyRef={bodyRef} />
+      <Dog dogRef={dogRef} />
+    </>
+  )
+}
