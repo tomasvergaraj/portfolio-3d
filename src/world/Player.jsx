@@ -54,11 +54,7 @@ function Avatar({ groupRef, bodyRef }) {
           <meshStandardMaterial color="#3a2a1c" roughness={1} />
         </mesh>
       </group>
-      {/* Sombra de contacto simple bajo el avatar */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.76, 0]}>
-        <circleGeometry args={[0.6, 20]} />
-        <meshBasicMaterial color="#000000" transparent opacity={0.12} />
-      </mesh>
+      {/* El asentado en el suelo lo da <ContactShadows> en Scene.jsx */}
     </group>
   )
 }
