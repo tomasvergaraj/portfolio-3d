@@ -40,5 +40,9 @@ Screenshots antes/después en `screenshots/iterN-*` (ignorados por git).
 - **Verificación:** medido por Playwright — desplazamiento con Shift / sin Shift = ratio 1.85 exacto.
 - **Efecto:** sprint funcional en escritorio (y preparado para móvil con `touch.boost`).
 
+## Iteración 8 — Sprint también en móvil
+- **Cambio:** `src/ui/Joystick.jsx` activa `touch.boost = true` al empujar el stick a fondo (>92% del radio) y lo resetea al soltar. Completa el sprint que la iter 7 dejó preparado para táctil.
+- **Efecto:** en móvil se corre empujando el joystick al máximo; al centro se camina.
+
 ---
-**Estado del loop:** 5 iteraciones de alto impacto y bajo riesgo completadas (cielo, luz, sombras de contacto, agua, atmósfera). Lo que queda es de menor impacto o requeriría assets/dependencias externas (modelo riggeado para el avatar vía Mixamo+useGLTF, HDRI local para reflejos sin depender del CDN, texturas de suelo). Detención según lo pedido (~5 iteraciones auto-ritmo).
+**Estado del loop:** 8 iteraciones completadas. Visual: cielo, luz, sombras de contacto, agua, atmósfera. Jugabilidad/bugs: avatar y mascota asentados sobre el suelo (ya no se hunden), sprint con Shift y con joystick a fondo. Lo que queda es de menor impacto o requeriría assets/dependencias externas (modelo riggeado para el avatar vía Mixamo+useGLTF, HDRI local para reflejos sin depender del CDN, texturas de suelo).

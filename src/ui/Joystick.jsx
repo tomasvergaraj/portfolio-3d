@@ -30,6 +30,8 @@ export function Joystick() {
     // dy hacia arriba (negativo) = avanzar (-z)
     touch.x = dx / MAX
     touch.z = dy / MAX
+    // Empujar el stick a fondo activa el sprint (equivalente táctil del Shift).
+    touch.boost = len > MAX * 0.92
   }
 
   const start = (e) => {
@@ -43,6 +45,7 @@ export function Joystick() {
     setStick({ x: 0, y: 0 })
     touch.x = 0
     touch.z = 0
+    touch.boost = false
   }
 
   return (
