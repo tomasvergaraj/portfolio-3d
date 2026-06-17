@@ -66,5 +66,12 @@ Screenshots antes/después en `screenshots/iterN-*` (ignorados por git).
 - **Cambio:** en `src/world/Player.jsx`, al abrir una sección la cámara hace un dolly hacia el monumento de esa estación (offset ×0.52, altura ×0.8) y vuelve a seguir al avatar al cerrar; el `lookAt` se interpola con un ref propio. Suavizado independiente del framerate (`1 - 0.001^dt`) y vectores temporales reutilizados.
 - **Efecto:** transición entrar/salir suave y con intención; sin saltos de cámara.
 
+## Iteración 13 — Infraestructura de avatar 3D real (con fallback)
+- **Contexto:** el usuario aportó `character/character.fbx` (Mixamo "Remy", riggeado, texturas PBR embebidas).
+- **Bloqueo encontrado:** el archivo es **FBX versión 6100**, que el `FBXLoader` de three NO soporta (solo 7.x). Sin Blender/FBX2glTF/assimp locales para convertir (proxy bloquea descargas).
+- **Cambio:** `src/world/AvatarModel.jsx` (carga `.glb` vía useGLTF o `.fbx` 7.x vía useFBX, ajusta materiales/sombras y baja brazos a pose-A) + `src/world/ModelBoundary.jsx` (error boundary → primitivas). En `src/world/Player.jsx` el avatar se monta solo si `AVATAR_MODEL_URL` está configurado; si no, usa primitivas sin cargar nada. Fallback verificado (la app no se rompe).
+- **Para activarlo:** dejar un modelo válido en `public/` y poner su ruta en `AVATAR_MODEL_URL`. Ver README → "Cambiar el avatar por un modelo 3D real".
+- **Recomendación al usuario:** re-descargar de Mixamo como **FBX Binary** (7.x) o `.glb`, idealmente con animación Walking/Running "with skin" para movimiento real de piernas.
+
 ---
 **Estado del loop:** 12 iteraciones completadas. Visual: cielo, luz, sombras de contacto, agua, atmósfera. Jugabilidad/bugs: avatar y mascota asentados sobre el suelo, sprint con Shift y con joystick a fondo, mascota mirando hacia donde avanza, mascota que galopa al correr, etiquetas 2D ocultas con el modal, cámara cinematográfica al entrar/salir de secciones. **Pendiente que requiere asset externo:** cambiar el avatar de primitivas por un modelo `.glb` riggeado (Mixamo) — el proxy bloquea descargas, así que el usuario debe aportar el archivo en `public/`. También opcional: HDRI local para reflejos sin depender del CDN.

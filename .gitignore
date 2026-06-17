@@ -2,6 +2,7 @@ node_modules
 dist
 dist-ssr
 screenshots
+character
 *.local
 .DS_Store
 .vscode/*

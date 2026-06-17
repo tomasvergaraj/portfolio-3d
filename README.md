@@ -50,11 +50,13 @@ Otros puntos útiles:
 
 ### Cambiar el avatar por un modelo 3D real
 
-El avatar está hecho con primitivas en `src/world/Player.jsx`. Para usar un modelo riggeado (por ejemplo de [Mixamo](https://www.mixamo.com), en formato `.glb`):
+La infraestructura ya está lista en `src/world/AvatarModel.jsx` (soporta `.glb`/`.gltf` y `.fbx`, con fallback automático a las primitivas mientras carga o si falla). Para activarlo:
 
-1. Coloca el archivo en `public/` (ej. `public/avatar.glb`).
-2. Cárgalo con `useGLTF('/avatar.glb')` de drei y reemplaza el grupo del `Avatar`.
-3. Para animarlo al caminar, usa `useAnimations` de drei.
+1. Coloca un modelo válido en `public/` (ej. `public/character.glb`).
+2. En `src/world/AvatarModel.jsx`, pon su ruta en `AVATAR_MODEL_URL` (ej. `'/character.glb'`). Ajusta `SCALE` tras ver el render.
+3. Para animarlo al caminar/correr, usa `useAnimations` de drei con un clip (Mixamo: descarga "with skin" la animación Walking/Running).
+
+> **Formato:** prefiere **glTF/GLB** (ligero). Si usas **FBX**, debe ser **7.x** — el `FBXLoader` de three **no** soporta FBX 6100. Desde Mixamo, descarga como "FBX Binary" (es 7.x) o convierte a `.glb`.
 
 ## Estructura
 

@@ -1,9 +1,11 @@
-import React, { useRef } from 'react'
+import React, { useRef, Suspense } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { readInput } from '../controls/input'
 import { useStore } from '../store'
 import { STATIONS, stationPosition } from '../data/stations'
+import { AvatarModel, AVATAR_MODEL_URL } from './AvatarModel'
+import { ModelBoundary } from './ModelBoundary'
 
 const SPEED = 6.4
 const SPRINT_MULT = 1.85 // velocidad al correr (Shift / joystick a fondo)
@@ -33,34 +35,54 @@ const STATION_POS = STATIONS.map((s) => {
 const _camDesired = new THREE.Vector3()
 const _lookDesired = new THREE.Vector3()
 
+// Avatar de primitivas: sirve de fallback mientras carga el modelo 3D o si no
+// está disponible.
+function PrimitiveBody() {
+  return (
+    <>
+      {/* Cuerpo */}
+      <mesh castShadow position={[0, 1, 0]}>
+        <capsuleGeometry args={[0.45, 0.7, 8, 16]} />
+        <meshStandardMaterial color="#2f6bff" roughness={0.6} />
+      </mesh>
+      {/* Cabeza */}
+      <mesh castShadow position={[0, 1.95, 0]}>
+        <sphereGeometry args={[0.42, 24, 24]} />
+        <meshStandardMaterial color="#ffe0c2" roughness={0.8} />
+      </mesh>
+      {/* Ojos (frente +z) */}
+      <mesh position={[0.15, 2, 0.36]}>
+        <sphereGeometry args={[0.06, 12, 12]} />
+        <meshStandardMaterial color="#16202e" />
+      </mesh>
+      <mesh position={[-0.15, 2, 0.36]}>
+        <sphereGeometry args={[0.06, 12, 12]} />
+        <meshStandardMaterial color="#16202e" />
+      </mesh>
+      {/* Pelo */}
+      <mesh castShadow position={[0, 2.18, -0.04]}>
+        <sphereGeometry args={[0.44, 20, 20, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#3a2a1c" roughness={1} />
+      </mesh>
+    </>
+  )
+}
+
 function Avatar({ groupRef, bodyRef }) {
   return (
     <group ref={groupRef} position={[0, GROUND_Y - 0.2, 6]}>
       <group ref={bodyRef}>
-        {/* Cuerpo */}
-        <mesh castShadow position={[0, 1, 0]}>
-          <capsuleGeometry args={[0.45, 0.7, 8, 16]} />
-          <meshStandardMaterial color="#2f6bff" roughness={0.6} />
-        </mesh>
-        {/* Cabeza */}
-        <mesh castShadow position={[0, 1.95, 0]}>
-          <sphereGeometry args={[0.42, 24, 24]} />
-          <meshStandardMaterial color="#ffe0c2" roughness={0.8} />
-        </mesh>
-        {/* Ojos (frente +z) */}
-        <mesh position={[0.15, 2, 0.36]}>
-          <sphereGeometry args={[0.06, 12, 12]} />
-          <meshStandardMaterial color="#16202e" />
-        </mesh>
-        <mesh position={[-0.15, 2, 0.36]}>
-          <sphereGeometry args={[0.06, 12, 12]} />
-          <meshStandardMaterial color="#16202e" />
-        </mesh>
-        {/* Pelo */}
-        <mesh castShadow position={[0, 2.18, -0.04]}>
-          <sphereGeometry args={[0.44, 20, 20, 0, Math.PI * 2, 0, Math.PI / 2]} />
-          <meshStandardMaterial color="#3a2a1c" roughness={1} />
-        </mesh>
+        {/* Avatar: modelo 3D real si hay uno configurado (con fallback a
+            primitivas mientras carga o si falla); si no, primitivas. */}
+        {AVATAR_MODEL_URL ? (
+          <ModelBoundary fallback={<PrimitiveBody />}>
+            <Suspense fallback={<PrimitiveBody />}>
+              <AvatarModel />
+            </Suspense>
+          </ModelBoundary>
+        ) : (
+          <PrimitiveBody />
+        )}
       </group>
       {/* El asentado en el suelo lo da <ContactShadows> en Scene.jsx */}
     </group>
