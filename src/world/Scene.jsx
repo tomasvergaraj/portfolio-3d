@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react'
 import { Environment } from '@react-three/drei'
 import { Island } from './Island'
+import { Sky } from './Sky'
 import { Water } from './Water'
 import { Scenery } from './Scenery'
 import { Player } from './Player'
@@ -11,9 +12,11 @@ import { STATIONS, stationPosition } from '../data/stations'
 export function Scene({ reducedMotion = false }) {
   return (
     <>
-      {/* Cielo y niebla en tonos cálidos, sobre la paleta del mundo */}
-      <color attach="background" args={['#a9cdea']} />
-      <fog attach="fog" args={['#cfe0ec', 55, 150]} />
+      {/* Domo de cielo con gradiente (cenit → horizonte) y niebla afinada al
+          horizonte para que isla y agua fundan suavemente en la distancia. */}
+      <color attach="background" args={['#dbeaf3']} />
+      <Sky />
+      <fog attach="fog" args={['#dbeaf3', 70, 165]} />
 
       {/* Iluminación analítica: funciona aunque el HDRI no cargue */}
       <hemisphereLight args={['#dcebff', '#9dbe7a', 0.65]} />
