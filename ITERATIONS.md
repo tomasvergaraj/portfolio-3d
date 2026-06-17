@@ -50,5 +50,11 @@ Screenshots antes/después en `screenshots/iterN-*` (ignorados por git).
 - **Cambio:** en `src/world/StationMarker.jsx`, no se renderiza la etiqueta cuando `active !== null` (`modalOpen`).
 - **Efecto:** con un panel abierto, el modal queda limpio.
 
+## Iteración 10 — La mascota mira hacia donde avanza
+- **Pedido:** que la mascota no se mueva de lado.
+- **Causa:** el perro mira a +x en su modelo, pero se orientaba con `atan2(ddx, ddz)` (válido para algo que mira a +z) → quedaba perpendicular al movimiento (caminaba de costado).
+- **Cambio:** en `src/world/Player.jsx`, `dtar = atan2(ddx, ddz) - π/2`; además orientación inicial del perro (`rotation y = π/2`) para que no aparezca de lado en reposo.
+- **Efecto:** el hocico apunta a la dirección de avance.
+
 ---
 **Estado del loop:** 8 iteraciones completadas. Visual: cielo, luz, sombras de contacto, agua, atmósfera. Jugabilidad/bugs: avatar y mascota asentados sobre el suelo (ya no se hunden), sprint con Shift y con joystick a fondo. Lo que queda es de menor impacto o requeriría assets/dependencias externas (modelo riggeado para el avatar vía Mixamo+useGLTF, HDRI local para reflejos sin depender del CDN, texturas de suelo).

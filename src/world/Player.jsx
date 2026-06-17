@@ -65,7 +65,7 @@ function Avatar({ groupRef, bodyRef }) {
 
 function Dog({ dogRef }) {
   return (
-    <group ref={dogRef} position={[0, GROUND_Y, 7.5]}>
+    <group ref={dogRef} position={[0, GROUND_Y, 7.5]} rotation={[0, Math.PI / 2, 0]}>
       {/* Cuerpo alargado */}
       <mesh castShadow position={[0, 0.5, 0]} rotation={[0, 0, Math.PI / 2]}>
         <capsuleGeometry args={[0.26, 0.95, 8, 12]} />
@@ -165,7 +165,9 @@ export function Player() {
       const ddx = dog.position.x - px
       const ddz = dog.position.z - pz
       if (Math.hypot(ddx, ddz) > 0.001) {
-        const dtar = Math.atan2(ddx, ddz)
+        // El perro mira hacia +x en su modelo; restamos π/2 para que el hocico
+        // apunte a la dirección de avance en vez de caminar de lado.
+        const dtar = Math.atan2(ddx, ddz) - Math.PI / 2
         dog.rotation.y = lerpAngle(dog.rotation.y, dtar, 0.25)
       }
     }
