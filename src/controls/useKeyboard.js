@@ -23,8 +23,10 @@ export function useKeyboard() {
         return
       }
 
-      // Movimiento (se ignora mientras el panel está abierto)
-      if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) {
+      // Movimiento + sprint (Shift). Se ignoran mientras el panel está abierto.
+      if (
+        ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift'].includes(k)
+      ) {
         keys.add(k)
       }
     }

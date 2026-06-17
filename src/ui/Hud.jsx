@@ -31,7 +31,9 @@ export function Hud({ onOpenMenu }) {
         <kbd>A</kbd>
         <kbd>S</kbd>
         <kbd>D</kbd>
-        <span>para moverte · acércate a un punto para entrar</span>
+        <span>para moverte ·</span>
+        <kbd>Shift</kbd>
+        <span>para correr · acércate a un punto para entrar</span>
       </div>
 
       {/* Prompt de proximidad */}

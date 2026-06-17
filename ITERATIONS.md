@@ -34,5 +34,11 @@ Screenshots antes/después en `screenshots/iterN-*` (ignorados por git).
 - **Cambio:** en `src/world/Player.jsx`, constante `GROUND_Y=0.7`; avatar en `y=GROUND_Y-0.2` (pies sobre el suelo) y perro en `y=GROUND_Y` (patas sobre el suelo). Sombra de contacto bajada a `y=0.72` en `src/world/Scene.jsx` para captarlos.
 - **Efecto:** avatar y perro se paran correctamente sobre la isla.
 
+## Iteración 7 — Correr con Shift (sprint)
+- **Pedido:** poder moverse más rápido con Shift.
+- **Cambio:** `src/controls/useKeyboard.js` rastrea `shift`; `src/controls/input.js` expone `sprint` (Shift o joystick a fondo vía `touch.boost`); `src/world/Player.jsx` aplica `SPRINT_MULT=1.85` a la velocidad y acelera/marca más el balanceo al correr. HUD actualizado con la pista "Shift para correr" (`src/ui/Hud.jsx`).
+- **Verificación:** medido por Playwright — desplazamiento con Shift / sin Shift = ratio 1.85 exacto.
+- **Efecto:** sprint funcional en escritorio (y preparado para móvil con `touch.boost`).
+
 ---
 **Estado del loop:** 5 iteraciones de alto impacto y bajo riesgo completadas (cielo, luz, sombras de contacto, agua, atmósfera). Lo que queda es de menor impacto o requeriría assets/dependencias externas (modelo riggeado para el avatar vía Mixamo+useGLTF, HDRI local para reflejos sin depender del CDN, texturas de suelo). Detención según lo pedido (~5 iteraciones auto-ritmo).

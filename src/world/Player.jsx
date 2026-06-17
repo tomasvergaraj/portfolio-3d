@@ -6,6 +6,7 @@ import { useStore } from '../store'
 import { STATIONS, stationPosition } from '../data/stations'
 
 const SPEED = 6.4
+const SPRINT_MULT = 1.85 // velocidad al correr (Shift / joystick a fondo)
 const CLAMP_R = 20.5
 const INTERACT_R = 3.6
 const CAM_OFFSET = new THREE.Vector3(0, 12.5, 16.5)
@@ -125,11 +126,14 @@ export function Player() {
     const d = Math.min(dt, 0.05)
 
     const frozen = useStore.getState().active !== null
-    const { x, z, moving } = frozen ? { x: 0, z: 0, moving: false } : readInput()
+    const { x, z, moving, sprint } = frozen
+      ? { x: 0, z: 0, moving: false, sprint: false }
+      : readInput()
 
+    const speed = SPEED * (sprint && moving ? SPRINT_MULT : 1)
     if (moving) {
-      g.position.x += x * SPEED * d
-      g.position.z += z * SPEED * d
+      g.position.x += x * speed * d
+      g.position.z += z * speed * d
       const target = Math.atan2(x, z)
       g.rotation.y = lerpAngle(g.rotation.y, target, 0.2)
     }
@@ -141,10 +145,11 @@ export function Player() {
       g.position.z *= CLAMP_R / r
     }
 
-    // Balanceo al caminar
-    walk.current += moving ? d * 10 : 0
+    // Balanceo al caminar (más rápido y marcado al correr)
+    walk.current += moving ? d * (sprint ? 16 : 10) : 0
     if (bodyRef.current) {
-      bodyRef.current.position.y = moving ? Math.abs(Math.sin(walk.current)) * 0.12 : 0
+      const amp = sprint ? 0.17 : 0.12
+      bodyRef.current.position.y = moving ? Math.abs(Math.sin(walk.current)) * amp : 0
     }
 
     // Estela para el perro
