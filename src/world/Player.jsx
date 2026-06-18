@@ -35,6 +35,14 @@ function lerpAngle(a, b, t) {
   return a + diff * t
 }
 
+const smooth = (p) => p * p * (3 - 2 * p)
+
+// Intro cinematográfica: la cámara arranca en una vista aérea amplia y vuela
+// hasta la posición de juego cuando el mundo queda listo.
+const INTRO_START_POS = new THREE.Vector3(0, 34, 46)
+const INTRO_LOOK = new THREE.Vector3(0, 2, 0)
+const INTRO_DUR = 2.8
+
 // Posiciones precalculadas de las estaciones (para la proximidad).
 const STATION_POS = STATIONS.map((s) => {
   const [x, , z] = stationPosition(s.angle)
@@ -174,6 +182,7 @@ export function Player() {
   const lastNearby = useRef(null)
   const walk = useRef(0)
   const dogGait = useRef(0)
+  const intro = useRef({ started: false, t: 0 })
   // Punto al que mira la cámara, interpolado para transiciones suaves.
   // Se inicia en el objetivo del avatar para no barrer al cargar.
   const lookAt = useRef(new THREE.Vector3(0, GROUND_Y + 0.5, 6))
@@ -185,7 +194,9 @@ export function Player() {
     const d = Math.min(dt, 0.05)
 
     const active = useStore.getState().active
-    const frozen = active !== null
+    const ready = useStore.getState().ready
+    // Congelar el control durante la carga y la intro de cámara.
+    const frozen = active !== null || !ready
     const { x, z, moving, sprint } = frozen
       ? { x: 0, z: 0, moving: false, sprint: false }
       : readInput()
@@ -289,10 +300,25 @@ export function Player() {
       )
       _lookDesired.set(g.position.x, g.position.y + 1.2, g.position.z)
     }
-    const ease = 1 - Math.pow(0.001, d) // suavizado estable ante saltos de dt
-    cam.position.lerp(_camDesired, station ? ease * 0.9 : ease)
-    lookAt.current.lerp(_lookDesired, station ? ease * 0.9 : ease)
-    cam.lookAt(lookAt.current)
+    if (!ready) {
+      // Durante la carga, mantenemos la vista aérea de la intro.
+      cam.position.copy(INTRO_START_POS)
+      lookAt.current.copy(INTRO_LOOK)
+      cam.lookAt(lookAt.current)
+    } else if (intro.current.t < INTRO_DUR) {
+      // Vuelo de entrada: de la vista aérea a la posición de juego.
+      if (!intro.current.started) intro.current.started = true
+      intro.current.t += Math.min(dt, 0.4) // tiempo real (acotado) → ~constante
+      const p = smooth(Math.min(intro.current.t / INTRO_DUR, 1))
+      cam.position.lerpVectors(INTRO_START_POS, _camDesired, p)
+      lookAt.current.lerpVectors(INTRO_LOOK, _lookDesired, p)
+      cam.lookAt(lookAt.current)
+    } else {
+      const ease = 1 - Math.pow(0.001, d) // suavizado estable ante saltos de dt
+      cam.position.lerp(_camDesired, station ? ease * 0.9 : ease)
+      lookAt.current.lerp(_lookDesired, station ? ease * 0.9 : ease)
+      cam.lookAt(lookAt.current)
+    }
 
     // Proximidad a estaciones
     let nearest = null
