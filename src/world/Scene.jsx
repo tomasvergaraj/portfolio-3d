@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react'
+import React, { Suspense, useRef } from 'react'
 import { Environment, Sparkles } from '@react-three/drei'
 import { Island } from './Island'
 import { Walkway } from './Walkway'
@@ -10,9 +10,11 @@ import { Scenery } from './Scenery'
 import { Player } from './Player'
 import { StationMarker } from './StationMarker'
 import { Effects } from './Effects'
+import { Leaves, DayNight } from './Ambiance'
 import { STATIONS, stationPosition } from '../data/stations'
 
 export function Scene({ reducedMotion = false }) {
+  const keyLight = useRef()
   return (
     <>
       {/* Domo de cielo con gradiente (cenit → horizonte) y niebla afinada al
@@ -27,6 +29,7 @@ export function Scene({ reducedMotion = false }) {
       <hemisphereLight args={['#dcebff', '#9dbe7a', 0.5]} />
       <ambientLight intensity={0.18} />
       <directionalLight
+        ref={keyLight}
         position={[14, 20, 8]}
         intensity={1.7}
         color="#fff1d4"
@@ -89,6 +92,10 @@ export function Scene({ reducedMotion = false }) {
         opacity={0.5}
         color="#fff3d6"
       />
+
+      {/* Hojas que caen y ciclo de luz suave (día/noche) */}
+      <Leaves reducedMotion={reducedMotion} />
+      {!reducedMotion && <DayNight lightRef={keyLight} />}
 
       <Effects />
     </>
