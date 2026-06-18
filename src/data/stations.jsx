@@ -212,6 +212,44 @@ export const STATIONS = [
             </div>
             <a className="pj-link" href="https://github.com/tomasvergaraj/minimarket-pos" target="_blank" rel="noopener noreferrer">Ver repo →</a>
           </div>
+
+          <div className="proj">
+            <div className="pj-top">
+              <ProjBadge src="/logo-fertomart.svg" />
+              <span className="pj-tag">Landing</span>
+            </div>
+            <h4>Fertomart</h4>
+            <p>
+              Landing premium para una banquetería con 25 años en la V Región: galería con lightbox
+              swipeable, reels de video y SEO local agresivo.
+            </p>
+            <div className="pj-stack">
+              <span>Astro</span>
+              <span>TypeScript</span>
+              <span>SEO</span>
+              <span>WhatsApp</span>
+            </div>
+            <a className="pj-link" href="https://fertomart.cl/" target="_blank" rel="noopener noreferrer">Ver proyecto →</a>
+          </div>
+
+          <div className="proj">
+            <div className="pj-top">
+              <ProjBadge src="/logo-bugueno.png" />
+              <span className="pj-tag">Landing</span>
+            </div>
+            <h4>Bugueño Hormigones</h4>
+            <p>
+              Landing corporativa para una planta certificada de hormigón en Hijuelas, enfocada en
+              captar cotizaciones por WhatsApp en toda la Quinta Región.
+            </p>
+            <div className="pj-stack">
+              <span>React</span>
+              <span>Vite</span>
+              <span>SEO local</span>
+              <span>WhatsApp</span>
+            </div>
+            <a className="pj-link" href="https://buguenohormigones.cl/" target="_blank" rel="noopener noreferrer">Ver proyecto →</a>
+          </div>
         </div>
       </>
     ),
