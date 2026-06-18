@@ -7,6 +7,7 @@ import { Joystick } from './ui/Joystick'
 import { SectionMenu } from './ui/SectionMenu'
 import { StationPanel } from './ui/StationPanel'
 import { Loader } from './ui/Loader'
+import { AudioToggle } from './ui/AudioToggle'
 import { useKeyboard } from './controls/useKeyboard'
 import { useStore } from './store'
 
@@ -42,6 +43,7 @@ export default function App() {
       <SectionMenu openMenu={menu} setOpenMenu={setMenu} onPick={openStation} />
       <StationPanel />
       <Loader />
+      <AudioToggle />
     </>
   )
 }
