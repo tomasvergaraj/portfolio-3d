@@ -9,11 +9,11 @@ export const RING_RADIUS = 14
 
 // Insignia de proyecto: muestra el logo oficial del producto (si lo hay) y, si
 // no, un icono genérico de "proyecto de código".
-function ProjBadge({ src, color }) {
+function ProjBadge({ src, color, bg = '#fff' }) {
   const [failed, setFailed] = React.useState(false)
   if (src && !failed) {
     return (
-      <div className="pj-badge" style={{ background: '#fff', padding: 5 }}>
+      <div className="pj-badge" style={{ background: bg, padding: 5 }}>
         <img
           src={src}
           alt=""
@@ -234,7 +234,7 @@ export const STATIONS = [
 
           <div className="proj">
             <div className="pj-top">
-              <ProjBadge src="/logo-bugueno.png" />
+              <ProjBadge src="/logo-bugueno.png" bg="#16202e" />
               <span className="pj-tag">Landing</span>
             </div>
             <h4>Bugueño Hormigones</h4>
