@@ -12,8 +12,9 @@ import * as THREE from 'three'
 //
 // Con `null` el Player usa el avatar de primitivas (sin cargar nada).
 export const AVATAR_MODEL_URL = '/character_inactive.fbx' // modelo + clip de reposo
-// FBX con SOLO el clip de caminar (mismo rig de Mixamo). null = solo reposo.
-export const AVATAR_WALK_URL = '/character_walk.fbx'
+// FBX con SOLO el clip de caminar, "in place" (sin desplazamiento de raíz, que
+// si no haría derivar al personaje). Mismo rig de Mixamo. null = solo reposo.
+export const AVATAR_WALK_URL = '/character_walk_in_place.fbx'
 
 // Mixamo exporta en centímetros (~180 u); escalamos a ~1.8 u. Para un .glb en
 // metros usa SCALE ≈ 1. Ajustado sobre el render.
