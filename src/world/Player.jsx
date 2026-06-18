@@ -5,6 +5,7 @@ import { readInput } from '../controls/input'
 import { useStore } from '../store'
 import { STATIONS, stationPosition } from '../data/stations'
 import { AvatarModel, AVATAR_MODEL_URL } from './AvatarModel'
+import { DogModel, DOG_MODEL_URL } from './DogModel'
 import { ModelBoundary } from './ModelBoundary'
 
 const SPEED = 6.4
@@ -93,9 +94,10 @@ function Avatar({ groupRef, bodyRef }) {
   )
 }
 
-function Dog({ dogRef }) {
+// Perro de primitivas: fallback mientras carga el glb o si no está disponible.
+function DogPrimitive() {
   return (
-    <group ref={dogRef} position={[0, GROUND_Y, 7.5]} rotation={[0, Math.PI / 2, 0]}>
+    <>
       {/* Cuerpo alargado */}
       <mesh castShadow position={[0, 0.5, 0]} rotation={[0, 0, Math.PI / 2]}>
         <capsuleGeometry args={[0.26, 0.95, 8, 12]} />
@@ -137,6 +139,24 @@ function Dog({ dogRef }) {
         <cylinderGeometry args={[0.05, 0.1, 0.5, 8]} />
         <meshStandardMaterial color="#a86a3a" roughness={0.9} />
       </mesh>
+    </>
+  )
+}
+
+function Dog({ dogRef }) {
+  return (
+    <group ref={dogRef} position={[0, GROUND_Y, 7.5]} rotation={[0, Math.PI / 2, 0]}>
+      {/* Mascota: modelo 3D real si hay uno configurado (con fallback a
+          primitivas mientras carga o si falla); si no, primitivas. */}
+      {DOG_MODEL_URL ? (
+        <ModelBoundary fallback={<DogPrimitive />}>
+          <Suspense fallback={<DogPrimitive />}>
+            <DogModel />
+          </Suspense>
+        </ModelBoundary>
+      ) : (
+        <DogPrimitive />
+      )}
     </group>
   )
 }

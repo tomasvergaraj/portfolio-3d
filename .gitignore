@@ -3,6 +3,11 @@ dist
 dist-ssr
 screenshots
 character
+# Modelos 3D pesados: se sirven desde public/ en local pero no se versionan
+# (el perro/avatar caen a primitivas si el glb no está). Comprimir antes de
+# publicarlos en un deploy.
+public/*.glb
+public/*.fbx
 *.local
 .DS_Store
 .vscode/*
