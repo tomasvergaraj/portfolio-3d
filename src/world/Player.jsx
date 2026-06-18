@@ -19,8 +19,9 @@ const DOG_LAG = 26
 // asentaría justo encima del personaje. Lo empujamos hacia atrás este radio.
 const DOG_STANDOFF = 2.0
 // Con un modelo animado, su propio ciclo de marcha da el balanceo (no añadimos
-// el galope procedural que usa el perro de primitivas).
+// el movimiento procedural que usan las primitivas).
 const USE_DOG_MODEL = !!DOG_MODEL_URL
+const USE_AVATAR_MODEL = !!AVATAR_MODEL_URL
 // Altura de la superficie caminable de la isla (tapa de pasto en y≈0.7). El
 // avatar y el perro se asientan sobre ella; antes quedaban hundidos en el suelo.
 const GROUND_Y = 0.7
@@ -203,9 +204,10 @@ export function Player() {
       g.position.z *= CLAMP_R / r
     }
 
-    // Balanceo al caminar (más rápido y marcado al correr)
+    // Balanceo al caminar (más rápido y marcado al correr). Con el avatar
+    // animado lo da su propio clip de caminar; no añadimos el rebote procedural.
     walk.current += moving ? d * (sprint ? 16 : 10) : 0
-    if (bodyRef.current) {
+    if (bodyRef.current && !USE_AVATAR_MODEL) {
       const amp = sprint ? 0.17 : 0.12
       bodyRef.current.position.y = moving ? Math.abs(Math.sin(walk.current)) * amp : 0
     }
