@@ -18,6 +18,9 @@ const DOG_LAG = 26
 // se llena con la posición actual del jugador, así que sin esto el perro se
 // asentaría justo encima del personaje. Lo empujamos hacia atrás este radio.
 const DOG_STANDOFF = 2.0
+// Con un modelo animado, su propio ciclo de marcha da el balanceo (no añadimos
+// el galope procedural que usa el perro de primitivas).
+const USE_DOG_MODEL = !!DOG_MODEL_URL
 // Altura de la superficie caminable de la isla (tapa de pasto en y≈0.7). El
 // avatar y el perro se asientan sobre ella; antes quedaban hundidos en el suelo.
 const GROUND_Y = 0.7
@@ -249,11 +252,16 @@ export function Player() {
         const dtar = Math.atan2(ddx, ddz) - Math.PI / 2
         dog.rotation.y = lerpAngle(dog.rotation.y, dtar, 0.25)
       }
-      // Galope: salto más rápido y marcado al correr; trote suave al caminar.
-      const running = step > 0.004
-      dogGait.current += step * (sprint ? 11 : 7)
-      const amp = sprint ? 0.34 : 0.16
-      dog.position.y = GROUND_Y + (running ? Math.abs(Math.sin(dogGait.current)) * amp : 0)
+      // Con el modelo animado el balanceo lo da su ciclo de marcha: lo dejamos
+      // pegado al suelo. Con el perro de primitivas mantenemos el galope manual.
+      if (USE_DOG_MODEL) {
+        dog.position.y = GROUND_Y
+      } else {
+        const running = step > 0.004
+        dogGait.current += step * (sprint ? 11 : 7)
+        const amp = sprint ? 0.34 : 0.16
+        dog.position.y = GROUND_Y + (running ? Math.abs(Math.sin(dogGait.current)) * amp : 0)
+      }
     }
 
     // Cámara: persigue al avatar, y al abrir una sección hace un dolly suave
