@@ -373,11 +373,11 @@ export const STATIONS = [
               <span className="cv">@tomasvergaraj</span>
             </span>
           </a>
-          <a className="cta-card" href="https://www.linkedin.com/in/tomas-vergara-5ba752216/" target="_blank" rel="noopener noreferrer">
+          <a className="cta-card" href="https://www.linkedin.com/in/tomasvergaraj/" target="_blank" rel="noopener noreferrer">
             <span className="ci">in</span>
             <span>
               <span className="ck">LinkedIn</span>
-              <span className="cv">in/tomas-vergara</span>
+              <span className="cv">in/tomasvergaraj</span>
             </span>
           </a>
           <a className="cta-card" href="https://www.instagram.com/tomasvergar4/" target="_blank" rel="noopener noreferrer">
