@@ -1,6 +1,8 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, Suspense } from 'react'
 import { Float } from '@react-three/drei'
 import { STATIONS, stationPosition } from '../data/stations'
+import { ModelTrees, TREE_MODEL_URL } from './TreeModel'
+import { ModelBoundary } from './ModelBoundary'
 
 // PRNG determinista para que la escena se vea igual en cada carga.
 function mulberry32(seed) {
@@ -13,7 +15,8 @@ function mulberry32(seed) {
   }
 }
 
-function Tree({ position, scale = 1 }) {
+// Árbol de primitivas: fallback si el glb no carga, o si TREE_MODEL_URL es null.
+function ProceduralTree({ position, scale = 1 }) {
   return (
     <group position={position} scale={scale}>
       <mesh castShadow position={[0, 0.9, 0]}>
@@ -87,7 +90,7 @@ export function Scenery() {
       if (!farFromStations(x, z)) continue
       // Evitar el centro
       if (Math.hypot(x, z) < 4.5) continue
-      trees.push({ position: [x, 0.7, z], scale: 0.7 + rnd() * 0.6 })
+      trees.push({ position: [x, 0.7, z], scale: 0.7 + rnd() * 0.6, rot: rnd() * Math.PI * 2 })
     }
 
     guard = 0
@@ -103,11 +106,27 @@ export function Scenery() {
     return { trees, rocks }
   }, [])
 
+  // Árboles con modelo 3D real (geometría compartida) y fallback a primitivas
+  // mientras carga o si el glb falla.
+  const proceduralTrees = (
+    <>
+      {trees.map((t, i) => (
+        <ProceduralTree key={`t${i}`} {...t} />
+      ))}
+    </>
+  )
+
   return (
     <group>
-      {trees.map((t, i) => (
-        <Tree key={`t${i}`} {...t} />
-      ))}
+      {TREE_MODEL_URL ? (
+        <ModelBoundary fallback={proceduralTrees}>
+          <Suspense fallback={proceduralTrees}>
+            <ModelTrees trees={trees} />
+          </Suspense>
+        </ModelBoundary>
+      ) : (
+        proceduralTrees
+      )}
       {rocks.map((r, i) => (
         <Rock key={`r${i}`} {...r} />
       ))}
