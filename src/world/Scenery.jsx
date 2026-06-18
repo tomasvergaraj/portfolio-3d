@@ -1,9 +1,15 @@
 import React, { useMemo, Suspense } from 'react'
 import { Float } from '@react-three/drei'
 import { STATIONS, stationPosition } from '../data/stations'
-import { ModelTrees, TREE_MODEL_URL } from './TreeModel'
-import { ModelRocks, ROCK_MODEL_URL } from './RockModel'
+import { Instance, preloadModel } from './props'
 import { ModelBoundary } from './ModelBoundary'
+
+const TREE_URLS = ['/Tree.glb', '/Tree2.glb']
+const ROCK_URL = '/Resource_Rock_1.fbx'
+const GRASS_URL = '/Grass.glb'
+const TREE_H = 3.6
+const ROCK_H = 0.9
+const GRASS_H = 0.5
 
 // PRNG determinista para que la escena se vea igual en cada carga.
 function mulberry32(seed) {
@@ -16,7 +22,7 @@ function mulberry32(seed) {
   }
 }
 
-// Árbol de primitivas: fallback si el glb no carga, o si TREE_MODEL_URL es null.
+// Árbol de primitivas: fallback si los glb no cargan.
 function ProceduralTree({ position, scale = 1 }) {
   return (
     <group position={position} scale={scale}>
@@ -36,7 +42,7 @@ function ProceduralTree({ position, scale = 1 }) {
   )
 }
 
-// Roca de primitivas: fallback si el glb no carga, o si ROCK_MODEL_URL es null.
+// Roca de primitivas: fallback si el fbx no carga.
 function ProceduralRock({ position, scale = 1 }) {
   return (
     <mesh castShadow position={position} scale={scale} rotation={[0.3, 0.8, 0.1]}>
@@ -67,11 +73,12 @@ function Cloud3({ position, scale = 1 }) {
 }
 
 export function Scenery() {
-  const { trees, rocks } = useMemo(() => {
+  const { trees, rocks, grass } = useMemo(() => {
     const rnd = mulberry32(20240617)
     const stationAngles = STATIONS.map((s) => s.angle)
     const trees = []
     const rocks = []
+    const grass = []
 
     const farFromStations = (x, z) => {
       for (const a of stationAngles) {
@@ -88,11 +95,14 @@ export function Scenery() {
       const r = 5 + rnd() * 16
       const x = Math.cos(a) * r
       const z = Math.sin(a) * r
-      // Evitar tapar los caminos (cerca de los ejes radiales a estaciones)
       if (!farFromStations(x, z)) continue
-      // Evitar el centro
       if (Math.hypot(x, z) < 4.5) continue
-      trees.push({ position: [x, 0.7, z], scale: 0.7 + rnd() * 0.6, rot: rnd() * Math.PI * 2 })
+      trees.push({
+        position: [x, 0, z],
+        scale: 0.8 + rnd() * 0.5,
+        rot: rnd() * Math.PI * 2,
+        url: TREE_URLS[rnd() < 0.5 ? 0 : 1],
+      })
     }
 
     guard = 0
@@ -102,50 +112,67 @@ export function Scenery() {
       const r = 6 + rnd() * 15
       const x = Math.cos(a) * r
       const z = Math.sin(a) * r
-      rocks.push({ position: [x, 0.9, z], scale: 0.6 + rnd() * 0.9, rot: rnd() * Math.PI * 2 })
+      rocks.push({ position: [x, 0, z], scale: 0.6 + rnd() * 0.9, rot: rnd() * Math.PI * 2 })
     }
 
-    return { trees, rocks }
+    // Matas de pasto dispersas por la zona verde (no en el centro ni la orilla).
+    guard = 0
+    while (grass.length < 36 && guard < 800) {
+      guard++
+      const a = rnd() * Math.PI * 2
+      const r = 4.5 + rnd() * 16.5
+      const x = Math.cos(a) * r
+      const z = Math.sin(a) * r
+      grass.push({ position: [x, 0, z], scale: 0.7 + rnd() * 0.7, rot: rnd() * Math.PI * 2 })
+    }
+
+    return { trees, rocks, grass }
   }, [])
 
-  // Árboles con modelo 3D real (geometría compartida) y fallback a primitivas
-  // mientras carga o si el glb falla.
   const proceduralTrees = (
     <>
       {trees.map((t, i) => (
-        <ProceduralTree key={`t${i}`} {...t} />
+        <ProceduralTree key={`t${i}`} position={t.position} scale={t.scale} />
       ))}
     </>
   )
-
   const proceduralRocks = (
     <>
       {rocks.map((r, i) => (
-        <ProceduralRock key={`r${i}`} {...r} />
+        <ProceduralRock key={`r${i}`} position={r.position} scale={r.scale} />
       ))}
     </>
   )
 
   return (
     <group>
-      {TREE_MODEL_URL ? (
-        <ModelBoundary fallback={proceduralTrees}>
-          <Suspense fallback={proceduralTrees}>
-            <ModelTrees trees={trees} />
-          </Suspense>
-        </ModelBoundary>
-      ) : (
-        proceduralTrees
-      )}
-      {ROCK_MODEL_URL ? (
-        <ModelBoundary fallback={proceduralRocks}>
-          <Suspense fallback={proceduralRocks}>
-            <ModelRocks rocks={rocks} />
-          </Suspense>
-        </ModelBoundary>
-      ) : (
-        proceduralRocks
-      )}
+      {/* Árboles (dos variantes) */}
+      <ModelBoundary fallback={proceduralTrees}>
+        <Suspense fallback={proceduralTrees}>
+          {trees.map((t, i) => (
+            <Instance key={`t${i}`} url={t.url} position={t.position} targetH={TREE_H} scaleMul={t.scale} rot={t.rot} />
+          ))}
+        </Suspense>
+      </ModelBoundary>
+
+      {/* Rocas */}
+      <ModelBoundary fallback={proceduralRocks}>
+        <Suspense fallback={proceduralRocks}>
+          {rocks.map((r, i) => (
+            <Instance key={`r${i}`} url={ROCK_URL} position={r.position} targetH={ROCK_H} scaleMul={r.scale} rot={r.rot} />
+          ))}
+        </Suspense>
+      </ModelBoundary>
+
+      {/* Matas de pasto (sin fallback: detalle decorativo) */}
+      <ModelBoundary fallback={null}>
+        <Suspense fallback={null}>
+          {grass.map((gr, i) => (
+            <Instance key={`g${i}`} url={GRASS_URL} position={gr.position} targetH={GRASS_H} scaleMul={gr.scale} rot={gr.rot} />
+          ))}
+        </Suspense>
+      </ModelBoundary>
+
       <Cloud3 position={[-16, 16, -10]} scale={1.4} />
       <Cloud3 position={[18, 19, -4]} scale={1.1} />
       <Cloud3 position={[6, 17, 20]} scale={1.2} />
@@ -153,3 +180,8 @@ export function Scenery() {
     </group>
   )
 }
+
+preloadModel(TREE_URLS[0])
+preloadModel(TREE_URLS[1])
+preloadModel(ROCK_URL)
+preloadModel(GRASS_URL)

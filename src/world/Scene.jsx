@@ -1,6 +1,8 @@
 import React, { Suspense } from 'react'
 import { Environment, Sparkles } from '@react-three/drei'
 import { Island } from './Island'
+import { Walkway } from './Walkway'
+import { ModelBoundary } from './ModelBoundary'
 import { Sky } from './Sky'
 import { Water } from './Water'
 import { Scenery } from './Scenery'
@@ -47,6 +49,13 @@ export function Scene({ reducedMotion = false }) {
       </Suspense>
 
       <Island />
+
+      {/* Camino de roca enlosado sobre la base de los caminos */}
+      <ModelBoundary fallback={null}>
+        <Suspense fallback={null}>
+          <Walkway />
+        </Suspense>
+      </ModelBoundary>
 
       {/* Sin charco de sombra de contacto global: dejaba una "marca" oscura que
           seguía al avatar y al perro por el suelo. El asentado lo dan ahora las
