@@ -13,6 +13,10 @@ const CLAMP_R = 20.5
 const INTERACT_R = 3.6
 const CAM_OFFSET = new THREE.Vector3(0, 12.5, 16.5)
 const DOG_LAG = 26
+// Distancia mínima que el perro guarda respecto al avatar. En reposo el rastro
+// se llena con la posición actual del jugador, así que sin esto el perro se
+// asentaría justo encima del personaje. Lo empujamos hacia atrás este radio.
+const DOG_STANDOFF = 2.0
 // Altura de la superficie caminable de la isla (tapa de pasto en y≈0.7). El
 // avatar y el perro se asientan sobre ella; antes quedaban hundidos en el suelo.
 const GROUND_Y = 0.7
@@ -189,12 +193,33 @@ export function Player() {
     const dog = dogRef.current
     if (dog && trail.current.length > DOG_LAG) {
       const tgt = trail.current[trail.current.length - DOG_LAG]
+      // Empuja el objetivo para que el perro no se solape con el avatar: si el
+      // punto del rastro queda dentro del radio de cortesía (típico en reposo),
+      // lo separamos a DOG_STANDOFF en la dirección perro→avatar.
+      let tx = tgt.x
+      let tz = tgt.z
+      let ox = tx - g.position.x
+      let oz = tz - g.position.z
+      let od = Math.hypot(ox, oz)
+      if (od < DOG_STANDOFF) {
+        // Dirección desde el avatar hacia el perro (o hacia atrás si coinciden).
+        let bx = dog.position.x - g.position.x
+        let bz = dog.position.z - g.position.z
+        let bd = Math.hypot(bx, bz)
+        if (bd < 0.001) {
+          bx = -Math.sin(g.rotation.y)
+          bz = -Math.cos(g.rotation.y)
+          bd = 1
+        }
+        tx = g.position.x + (bx / bd) * DOG_STANDOFF
+        tz = g.position.z + (bz / bd) * DOG_STANDOFF
+      }
       const px = dog.position.x
       const pz = dog.position.z
       // Al correr, el perro acelera para no quedarse atrás (catch-up mayor).
       const follow = sprint ? 0.26 : 0.18
-      dog.position.x += (tgt.x - px) * follow
-      dog.position.z += (tgt.z - pz) * follow
+      dog.position.x += (tx - px) * follow
+      dog.position.z += (tz - pz) * follow
       const ddx = dog.position.x - px
       const ddz = dog.position.z - pz
       const step = Math.hypot(ddx, ddz)
