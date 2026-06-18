@@ -27,7 +27,7 @@ const SCALE = IS_GLTF ? 1 : 0.0105
 // Apoyo en el suelo: este rig tiene el pivote a la altura de la cadera (los pies
 // quedan ~0.55 bajo el origen ya escalado) y el grupo del avatar está ~0.2 bajo
 // la tapa de pasto. Subimos para que los pies toquen el suelo.
-const FOOT_Y = 0.75
+const FOOT_Y = 0.58
 // Velocidad base del avatar (SPEED en Player). Normaliza la velocidad de la
 // animación de caminar.
 const BASE_SPEED = 6.4
