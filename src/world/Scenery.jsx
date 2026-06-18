@@ -2,6 +2,7 @@ import React, { useMemo, Suspense } from 'react'
 import { Float } from '@react-three/drei'
 import { STATIONS, stationPosition } from '../data/stations'
 import { ModelTrees, TREE_MODEL_URL } from './TreeModel'
+import { ModelRocks, ROCK_MODEL_URL } from './RockModel'
 import { ModelBoundary } from './ModelBoundary'
 
 // PRNG determinista para que la escena se vea igual en cada carga.
@@ -35,7 +36,8 @@ function ProceduralTree({ position, scale = 1 }) {
   )
 }
 
-function Rock({ position, scale = 1 }) {
+// Roca de primitivas: fallback si el glb no carga, o si ROCK_MODEL_URL es null.
+function ProceduralRock({ position, scale = 1 }) {
   return (
     <mesh castShadow position={position} scale={scale} rotation={[0.3, 0.8, 0.1]}>
       <dodecahedronGeometry args={[0.6, 0]} />
@@ -100,7 +102,7 @@ export function Scenery() {
       const r = 6 + rnd() * 15
       const x = Math.cos(a) * r
       const z = Math.sin(a) * r
-      rocks.push({ position: [x, 0.9, z], scale: 0.6 + rnd() * 0.9 })
+      rocks.push({ position: [x, 0.9, z], scale: 0.6 + rnd() * 0.9, rot: rnd() * Math.PI * 2 })
     }
 
     return { trees, rocks }
@@ -116,6 +118,14 @@ export function Scenery() {
     </>
   )
 
+  const proceduralRocks = (
+    <>
+      {rocks.map((r, i) => (
+        <ProceduralRock key={`r${i}`} {...r} />
+      ))}
+    </>
+  )
+
   return (
     <group>
       {TREE_MODEL_URL ? (
@@ -127,9 +137,15 @@ export function Scenery() {
       ) : (
         proceduralTrees
       )}
-      {rocks.map((r, i) => (
-        <Rock key={`r${i}`} {...r} />
-      ))}
+      {ROCK_MODEL_URL ? (
+        <ModelBoundary fallback={proceduralRocks}>
+          <Suspense fallback={proceduralRocks}>
+            <ModelRocks rocks={rocks} />
+          </Suspense>
+        </ModelBoundary>
+      ) : (
+        proceduralRocks
+      )}
       <Cloud3 position={[-16, 16, -10]} scale={1.4} />
       <Cloud3 position={[18, 19, -4]} scale={1.1} />
       <Cloud3 position={[6, 17, 20]} scale={1.2} />

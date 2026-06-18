@@ -1,16 +1,26 @@
-// Optimiza character/arbol.glb (1.1M tris, ~25MB de texturas) a un asset apto
-// para web: suelda vértices, decima la malla y reduce/recomprime las texturas.
-// Salida: public/arbol.glb
+// Optimiza cualquier .glb pesado a un asset apto para web: suelda vértices,
+// decima la malla y reduce/recomprime las texturas (con jimp, sin binario nativo).
+//
+// Uso:
+//   node scripts/optimize-glb.mjs <entrada> <salida> [ratioTris] [tamañoTextura]
+// Ej.:
+//   node scripts/optimize-glb.mjs character/roca.glb public/roca.glb 0.06 1024
+//   node scripts/optimize-glb.mjs character/arbol.glb public/arbol.glb 0.04 1024
 import { NodeIO } from '@gltf-transform/core'
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
 import { weld, simplify, dedup, prune } from '@gltf-transform/functions'
 import { MeshoptSimplifier } from 'meshoptimizer'
 import { Jimp } from 'jimp'
 
-const IN = 'character/arbol.glb'
-const OUT = 'public/arbol.glb'
-const RATIO = Number(process.argv[2] ?? 0.04) // fracción de triángulos a conservar
-const TEXSIZE = Number(process.argv[3] ?? 1024)
+const IN = process.argv[2]
+const OUT = process.argv[3]
+const RATIO = Number(process.argv[4] ?? 0.05) // fracción de triángulos a conservar
+const TEXSIZE = Number(process.argv[5] ?? 1024)
+
+if (!IN || !OUT) {
+  console.error('Uso: node scripts/optimize-glb.mjs <entrada.glb> <salida.glb> [ratio] [texSize]')
+  process.exit(1)
+}
 
 const triCount = (doc) =>
   doc.getRoot().listMeshes()
@@ -21,7 +31,6 @@ async function main() {
   await MeshoptSimplifier.ready
   const io = new NodeIO().registerExtensions(ALL_EXTENSIONS)
   const doc = await io.read(IN)
-
   const before = triCount(doc)
 
   await doc.transform(
@@ -31,17 +40,15 @@ async function main() {
     prune()
   )
 
-  // Texturas: redimensionar y recomprimir con jimp (sin binario nativo).
+  // Texturas: redimensionar y recomprimir con jimp.
   for (const tex of doc.getRoot().listTextures()) {
     const img = await Jimp.read(Buffer.from(tex.getImage()))
-    if (img.width > TEXSIZE || img.height > TEXSIZE) {
-      img.scaleToFit({ w: TEXSIZE, h: TEXSIZE })
-    }
+    if (img.width > TEXSIZE || img.height > TEXSIZE) img.scaleToFit({ w: TEXSIZE, h: TEXSIZE })
     const buf = await img.getBuffer('image/jpeg', { quality: 80 })
     tex.setImage(new Uint8Array(buf)).setMimeType('image/jpeg')
   }
 
   await io.write(OUT, doc)
-  console.log(`tris ${Math.round(before)} -> ${Math.round(triCount(doc))} (ratio ${RATIO}), texturas <= ${TEXSIZE}px`)
+  console.log(`${IN} -> ${OUT}: tris ${Math.round(before)} -> ${Math.round(triCount(doc))} (ratio ${RATIO}), texturas <= ${TEXSIZE}px`)
 }
 main().catch((e) => { console.error(e); process.exit(1) })

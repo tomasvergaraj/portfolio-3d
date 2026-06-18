@@ -1,7 +1,9 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, Suspense } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html, Float } from '@react-three/drei'
 import { useStore } from '../store'
+import { StationModel, useStationModelExists } from './StationModel'
+import { ModelBoundary } from './ModelBoundary'
 
 // ---- Monumentos por tipo -------------------------------------------------
 
@@ -98,6 +100,8 @@ export function StationMarker({ station, position }) {
   // Con un panel abierto ocultamos las etiquetas 2D: si no, se cuelan por
   // encima del modal (las dibuja <Html> en el DOM, fuera del lienzo).
   const modalOpen = useStore((s) => s.active !== null)
+  // ¿Hay un glb para esta estación en public/? Si sí, usamos el modelo 3D.
+  const hasModel = useStationModelExists(station.id)
 
   useFrame((state) => {
     const t = state.clock.elapsedTime
@@ -128,7 +132,17 @@ export function StationMarker({ station, position }) {
         document.body.style.cursor = 'auto'
       }}
     >
-      <Monument kind={station.kind} color={station.color} />
+      {/* Monumento: modelo 3D real (public/<id>.glb) si existe; si no, las
+          primitivas. El modelo se auto-ajusta a tamaño/suelo. */}
+      {hasModel ? (
+        <ModelBoundary fallback={<Monument kind={station.kind} color={station.color} />}>
+          <Suspense fallback={<Monument kind={station.kind} color={station.color} />}>
+            <StationModel id={station.id} />
+          </Suspense>
+        </ModelBoundary>
+      ) : (
+        <Monument kind={station.kind} color={station.color} />
+      )}
 
       {/* Faro emisivo (lo recoge el bloom) */}
       <mesh ref={beaconRef} position={[0, 4.4, 0]}>
