@@ -1,6 +1,7 @@
 import React from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { STATIONS } from '../data/stations'
+import { StationIcon } from '../world/StationIcon'
 
 export function SectionMenu({ openMenu, setOpenMenu, onPick }) {
   return (
@@ -37,7 +38,7 @@ export function SectionMenu({ openMenu, setOpenMenu, onPick }) {
                   }}
                 >
                   <span className="si" style={{ background: st.color }}>
-                    {st.icon}
+                    <StationIcon id={st.id} size={18} color="#fff" />
                   </span>
                   <span>
                     <span className="sn" style={{ display: 'block' }}>

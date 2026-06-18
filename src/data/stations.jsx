@@ -3,7 +3,7 @@ import React from 'react'
 // Cada estación combina su metadato para el mundo 3D (posición en el anillo,
 // color del faro, tipo de monumento, variante de animación de entrada) con el
 // contenido real de la página. El contenido es JSX y reutiliza las clases de
-// styles.css, idénticas a la versión anterior.
+// styles.css. La información se mantiene alineada con el portafolio 2D.
 
 export const RING_RADIUS = 14
 
@@ -20,11 +20,12 @@ export const STATIONS = [
     Content: () => (
       <>
         <p className="ov-eyebrow">Sobre mí</p>
-        <h1 className="ov-title">Construyo productos web completos, de la idea a producción.</h1>
+        <h1 className="ov-title">Construyo software con foco en usuarios reales.</h1>
         <p className="ov-lead">
-          Hola, soy <strong>Tomás Vergara</strong>. Desarrollador full-stack desde Quillota, Región
-          de Valparaíso. Fundé <strong>Nexo Software</strong> para llevar software a medida a pymes
-          de la zona, y de día trabajo en tecnología dentro del sistema de salud público.
+          Hola, soy <strong>Tomás Vergara</strong>, desarrollador full-stack desde Quillota, Región
+          de Valparaíso. Fundé <strong>Nexo Software SpA</strong> para llevar software a medida y
+          productos SaaS a empresas, y trabajo como Junior Full Stack Developer en el Hospital
+          Biprovincial Quillota–Petorca.
         </p>
         <p className="ov-lead">
           Me gustan los sistemas que funcionan de verdad y las interfaces que se sienten bien.
@@ -42,7 +43,7 @@ export const STATIONS = [
           </div>
           <div className="fact">
             <div className="k">Foco</div>
-            <div className="v">Web · SaaS · IA aplicada</div>
+            <div className="v">Web · SaaS · a medida</div>
           </div>
           <div className="fact">
             <div className="k">Disponible</div>
@@ -72,86 +73,115 @@ export const STATIONS = [
         <div className="proj-grid">
           <div className="proj">
             <div className="pj-top">
-              <div className="pj-badge" style={{ background: '#22b07d' }}>
-                NF
-              </div>
+              <div className="pj-badge" style={{ background: '#22b07d' }}>NF</div>
               <span className="pj-tag">SaaS</span>
             </div>
-            <h4>NexoFitness</h4>
+            <h4>Nexo Fitness</h4>
             <p>
-              Plataforma de gestión para gimnasios: pagos con Webpay, control de acceso por QR,
-              módulo de caja/POS y reportes para el dueño.
+              SaaS para la gestión integral de gimnasios: socios, planes, pagos y vencimientos.
+              Multi-tenant y containerizado con Docker. En producción.
             </p>
             <div className="pj-stack">
-              <span>Next.js</span>
-              <span>FastAPI</span>
-              <span>PostgreSQL</span>
-              <span>Transbank</span>
+              <span>TypeScript</span>
+              <span>React</span>
+              <span>Node.js</span>
+              <span>Docker</span>
             </div>
-            <span className="pj-link">Ver proyecto →</span>
+            <a className="pj-link" href="https://nexofitness.cl/" target="_blank" rel="noopener noreferrer">Ver proyecto →</a>
           </div>
 
           <div className="proj">
             <div className="pj-top">
-              <div className="pj-badge" style={{ background: '#1f1f24' }}>
-                NV
-              </div>
-              <span className="pj-tag">SaaS · IA</span>
-            </div>
-            <h4>Navaxa</h4>
-            <p>
-              SaaS para barberías con agenda y recomendaciones de corte generadas por IA. Monorepo
-              completo desplegado en VPS.
-            </p>
-            <div className="pj-stack">
-              <span>Turborepo</span>
-              <span>Prisma</span>
-              <span>Auth.js</span>
-              <span>Anthropic API</span>
-            </div>
-            <span className="pj-link">Ver proyecto →</span>
-          </div>
-
-          <div className="proj">
-            <div className="pj-top">
-              <div className="pj-badge" style={{ background: '#e8732a' }}>
-                HB
-              </div>
-              <span className="pj-tag">Webapp</span>
+              <div className="pj-badge" style={{ background: '#e8732a' }}>HB</div>
+              <span className="pj-tag">Full Stack</span>
             </div>
             <h4>Hambuscador</h4>
             <p>
-              Buscador de hamburgueserías de Chile: más de 1.481 locales con mapa, filtros y reseñas
-              de la comunidad.
+              Plataforma y PWA para descubrir hamburgueserías en todo Chile: 1.481 locales, búsqueda
+              geográfica (PostGIS), mapa propio y reseñas de la comunidad.
             </p>
             <div className="pj-stack">
-              <span>Next.js</span>
-              <span>Drizzle</span>
+              <span>Next.js 15</span>
               <span>PostGIS</span>
-              <span>Leaflet</span>
+              <span>Drizzle</span>
+              <span>MapLibre</span>
             </div>
-            <span className="pj-link">Ver proyecto →</span>
+            <a className="pj-link" href="https://hambuscador.cl" target="_blank" rel="noopener noreferrer">Ver proyecto →</a>
           </div>
 
           <div className="proj">
             <div className="pj-top">
-              <div className="pj-badge" style={{ background: '#2563eb' }}>
-                JR
-              </div>
-              <span className="pj-tag">Salud pública</span>
+              <div className="pj-badge" style={{ background: '#2563eb' }}>NC</div>
+              <span className="pj-tag">PWA</span>
             </div>
-            <h4>Jornada &amp; FlamenGO!</h4>
+            <h4>NexoCotiza</h4>
             <p>
-              Herramientas para hospitales: gestión de horas extra con OCR sobre PDF escaneados y
-              optimización de rutas de hospitalización domiciliaria.
+              Crea cotizaciones profesionales y descárgalas en PDF o Word, 100% en el navegador, sin
+              registro. Cálculo de IVA y validación de RUT chileno.
+            </p>
+            <div className="pj-stack">
+              <span>Astro</span>
+              <span>React</span>
+              <span>IndexedDB</span>
+              <span>PWA</span>
+            </div>
+            <a className="pj-link" href="https://cotiza.nexosoftware.cl" target="_blank" rel="noopener noreferrer">Ver proyecto →</a>
+          </div>
+
+          <div className="proj">
+            <div className="pj-top">
+              <div className="pj-badge" style={{ background: '#1f1f24' }}>NT</div>
+              <span className="pj-tag">Full Stack · IA</span>
+            </div>
+            <h4>Nexo Transcriptor</h4>
+            <p>
+              Transcribe audio a texto con Whisper y lo exporta a Word. Cola Redis + Celery con
+              progreso en tiempo real; autohospedable con Docker.
             </p>
             <div className="pj-stack">
               <span>FastAPI</span>
-              <span>OR-Tools</span>
-              <span>Tesseract</span>
+              <span>faster-whisper</span>
+              <span>Redis</span>
               <span>Docker</span>
             </div>
-            <span className="pj-link">Ver proyecto →</span>
+            <a className="pj-link" href="https://transcribe.nexosoftware.cl" target="_blank" rel="noopener noreferrer">Ver proyecto →</a>
+          </div>
+
+          <div className="proj">
+            <div className="pj-top">
+              <div className="pj-badge" style={{ background: '#3b6ef0' }}>SS</div>
+              <span className="pj-tag">Full Stack</span>
+            </div>
+            <h4>Sistema de Sumariales</h4>
+            <p>
+              Registro, control y seguimiento de procesos sumariales: cálculo automático de plazos
+              legales, roles, notificaciones en tiempo real y trazabilidad.
+            </p>
+            <div className="pj-stack">
+              <span>React</span>
+              <span>Firebase</span>
+              <span>Zustand</span>
+              <span>Zod</span>
+            </div>
+            <a className="pj-link" href="https://sistema-sumariales-demo.vercel.app/" target="_blank" rel="noopener noreferrer">Ver demo →</a>
+          </div>
+
+          <div className="proj">
+            <div className="pj-top">
+              <div className="pj-badge" style={{ background: '#8a5630' }}>MP</div>
+              <span className="pj-tag">Escritorio</span>
+            </div>
+            <h4>Minimarket POS</h4>
+            <p>
+              Punto de venta de escritorio para minimarket: ventas, inventario y boletas, con
+              operación offline. Multiplataforma con Electron.
+            </p>
+            <div className="pj-stack">
+              <span>Electron</span>
+              <span>React</span>
+              <span>TypeScript</span>
+            </div>
+            <a className="pj-link" href="https://github.com/tomasvergaraj/minimarket-pos" target="_blank" rel="noopener noreferrer">Ver repo →</a>
           </div>
         </div>
       </>
@@ -188,10 +218,10 @@ export const STATIONS = [
           <div className="stack-col">
             <h4>Backend</h4>
             <div className="chips">
+              <span className="chip lead">Node.js</span>
               <span className="chip lead">FastAPI</span>
-              <span className="chip">Node.js</span>
               <span className="chip">Python</span>
-              <span className="chip">PHP</span>
+              <span className="chip">Express</span>
             </div>
           </div>
           <div className="stack-col">
@@ -200,12 +230,16 @@ export const STATIONS = [
               <span className="chip lead">PostgreSQL</span>
               <span className="chip">Prisma</span>
               <span className="chip">Drizzle</span>
+              <span className="chip">PostGIS</span>
+              <span className="chip">Firebase</span>
+              <span className="chip">Redis</span>
             </div>
           </div>
           <div className="stack-col">
             <h4>Infraestructura</h4>
             <div className="chips">
               <span className="chip">Docker</span>
+              <span className="chip">Vercel</span>
               <span className="chip">VPS Linux</span>
               <span className="chip">Cloudflare</span>
               <span className="chip">Nginx · Caddy</span>
@@ -214,10 +248,10 @@ export const STATIONS = [
           <div className="stack-col" style={{ gridColumn: '1 / -1' }}>
             <h4>Integraciones</h4>
             <div className="chips">
+              <span className="chip">Whisper · OCR</span>
+              <span className="chip">OpenAI API</span>
               <span className="chip">Transbank · Webpay</span>
-              <span className="chip">OR-Tools</span>
-              <span className="chip">OCR · Tesseract</span>
-              <span className="chip">Anthropic API</span>
+              <span className="chip">WhatsApp</span>
             </div>
           </div>
         </div>
@@ -240,29 +274,29 @@ export const STATIONS = [
         <h1 className="ov-title">Dónde he estado construyendo.</h1>
         <div className="timeline" style={{ marginTop: 24 }}>
           <div className="exp">
-            <div className="when">Actualidad</div>
+            <div className="when">2026 — Presente</div>
             <div>
-              <h4>Fundador &amp; Desarrollador</h4>
+              <h4>Fundador &amp; Desarrollador Full-stack</h4>
               <div className="org">Nexo Software SpA</div>
               <p>
-                Software a medida para pymes de la Región de Valparaíso. Diseño, desarrollo y
-                operación de landing pages y plataformas SaaS propias.
+                Empresa de software a medida y productos SaaS propios. Diseño, desarrollo y operación
+                de plataformas; lancé Nexo Fitness como primer producto.
               </p>
             </div>
           </div>
           <div className="exp">
-            <div className="when">Actualidad</div>
+            <div className="when">2025 — Presente</div>
             <div>
-              <h4>Técnico TIC</h4>
+              <h4>Junior Full Stack Developer</h4>
               <div className="org">Hospital Biprovincial Quillota–Petorca</div>
               <p>
-                Soporte y desarrollo de sistemas internos: gestión de horas extra, herramientas
-                clínicas y proyectos de integración con sistemas legados.
+                Desarrollo de aplicaciones web escalables con React y Node.js, y sistemas internos de
+                apoyo a la gestión clínica.
               </p>
             </div>
           </div>
           <div className="exp">
-            <div className="when">2023 – 2025</div>
+            <div className="when">2023 — 2025</div>
             <div>
               <h4>Ingeniería en Informática</h4>
               <div className="org">IACC</div>
@@ -294,9 +328,10 @@ export const STATIONS = [
     Content: () => (
       <>
         <p className="ov-eyebrow">Contacto</p>
-        <h1 className="ov-title">¿Construimos algo? Hablemos.</h1>
+        <h1 className="ov-title">Conversemos sobre tu proyecto.</h1>
         <p className="ov-lead" style={{ marginBottom: 28 }}>
-          Respondo rápido. Cuéntame qué necesitas y vemos cómo lo armamos.
+          ¿Tienes una idea o necesitas software a medida? Respondo rápido. Cuéntame qué necesitas y
+          vemos cómo lo armamos.
         </p>
         <div className="contact-grid">
           <a className="cta-card" href="mailto:contacto@nexosoftware.cl">
@@ -313,18 +348,18 @@ export const STATIONS = [
               <span className="cv">@tomasvergaraj</span>
             </span>
           </a>
-          <a className="cta-card" href="https://linkedin.com/in/tomasvergaraj" target="_blank" rel="noopener noreferrer">
+          <a className="cta-card" href="https://www.linkedin.com/in/tomas-vergara-5ba752216/" target="_blank" rel="noopener noreferrer">
             <span className="ci">in</span>
             <span>
               <span className="ck">LinkedIn</span>
-              <span className="cv">in/tomasvergaraj</span>
+              <span className="cv">in/tomas-vergara</span>
             </span>
           </a>
-          <a className="cta-card" href="https://portfolio-tvj.vercel.app" target="_blank" rel="noopener noreferrer">
+          <a className="cta-card" href="https://www.instagram.com/tomasvergar4/" target="_blank" rel="noopener noreferrer">
             <span className="ci">◐</span>
             <span>
-              <span className="ck">Portafolio</span>
-              <span className="cv">portfolio-tvj.vercel.app</span>
+              <span className="ck">Instagram</span>
+              <span className="cv">@tomasvergar4</span>
             </span>
           </a>
         </div>
