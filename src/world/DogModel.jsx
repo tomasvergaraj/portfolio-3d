@@ -22,6 +22,11 @@ const FACE_OFFSET = Math.PI / 2
 // Velocidad base del avatar (de Player). Sirve para normalizar el desplazamiento
 // del perro a un timeScale ~1 a paso normal.
 const BASE_SPEED = 6.4
+// Multiplicador del ciclo de marcha: >1 mueve las patas más rápido (pasitos
+// cortos típicos de un perro pequeño) sin cambiar cuánto avanza el perro.
+const ANIM_SPEED = 1.8
+// Tope del timeScale para que al correr (sprint) no se vuelva frenético.
+const MAX_TS = 3.5
 
 const _wp = new THREE.Vector3()
 
@@ -70,7 +75,7 @@ export function DogModel() {
     // Desplazamiento por segundo del perro → velocidad de la animación. En
     // reposo se detiene (timeScale 0) para no "patinar" en el sitio.
     const speed = step / Math.max(dt, 1e-3)
-    const ts = THREE.MathUtils.clamp(speed / BASE_SPEED, 0, 2.2)
+    const ts = THREE.MathUtils.clamp((speed / BASE_SPEED) * ANIM_SPEED, 0, MAX_TS)
     a.setEffectiveTimeScale(ts < 0.06 ? 0 : ts)
   })
 
