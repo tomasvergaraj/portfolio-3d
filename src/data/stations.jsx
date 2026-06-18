@@ -362,6 +362,13 @@ export const STATIONS = [
               <span className="cv">@tomasvergar4</span>
             </span>
           </a>
+          <a className="cta-card" href="https://portfolio-tvj.vercel.app/" target="_blank" rel="noopener noreferrer">
+            <span className="ci">◆</span>
+            <span>
+              <span className="ck">Portafolio</span>
+              <span className="cv">portfolio-tvj.vercel.app</span>
+            </span>
+          </a>
         </div>
         <div className="contact-line">
           <a className="btn-primary" href="https://wa.me/56981964119" target="_blank" rel="noopener noreferrer">
