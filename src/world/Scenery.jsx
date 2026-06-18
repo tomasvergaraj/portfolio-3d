@@ -80,7 +80,7 @@ export function Scenery() {
     }
 
     let guard = 0
-    while (trees.length < 16 && guard < 400) {
+    while (trees.length < 9 && guard < 400) {
       guard++
       const a = rnd() * Math.PI * 2
       const r = 5 + rnd() * 16
