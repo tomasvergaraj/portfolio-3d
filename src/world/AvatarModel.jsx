@@ -1,29 +1,31 @@
 import React, { useRef, useEffect, useLayoutEffect, useMemo } from 'react'
-import { useFBX, useGLTF, useAnimations } from '@react-three/drei'
+import { useGLTF, useAnimations } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { readInput } from '../controls/input'
 
 // ─────────────────────────────────────────────────────────────────────────
-// Avatar 3D real (Mixamo u otro). Para activarlo, deja un modelo válido en
-// `public/` y pon su ruta aquí. Soporta:
-//   • glTF/GLB  → recomendado (ligero; usa useGLTF)
-//   • FBX 7.x   → binario o ASCII (useFBX). OJO: el FBXLoader de three NO
-//                 soporta FBX 6100 (versión antigua).
-//
-// Con `null` el Player usa el avatar de primitivas (sin cargar nada).
-export const AVATAR_MODEL_URL = '/character_inactive.fbx' // modelo + clip de reposo
-// FBX con SOLO el clip de caminar, "in place" (sin desplazamiento de raíz, que
-// si no haría derivar al personaje). Mismo rig de Mixamo. null = solo reposo.
-export const AVATAR_WALK_URL = '/character_walk_in_place.fbx'
-// FBX con SOLO el clip de correr (in place). Se usa al hacer sprint. null = sin
-// correr (se queda en walk al sprintar).
-export const AVATAR_RUN_URL = '/character_running.fbx'
+// Avatar 3D real (Mixamo). Se sirve como GLB (meshopt) para que el deploy cargue
+// rápido. Los FBX originales (~45 MB) se convierten con el pipeline local (los
+// FBX deben estar en public/ y el dev server arriba):
+//   1) node scripts/extract-fbx-textures.mjs character/character_inactive.fbx
+//        → tmp/Image_0.jpg (difuso) y tmp/Image_1.jpg (normal); FBXLoader NO
+//          extrae las texturas embebidas, hay que sacarlas a mano.
+//   2) node scripts/fbx-to-glb.mjs            → tmp/*.raw.glb (en el navegador)
+//   3) node scripts/optimize-avatar.mjs tmp/avatar.raw.glb public/avatar.glb 1024 \
+//        flipv --diffuse=tmp/Image_0.jpg --normal=tmp/Image_1.jpg
+//      (flipv corrige el convenio de UV FBX↔glTF; sin él la textura sale a manchas)
+//   4) optimize-avatar de walk/run con 'anim' (solo huesos + clip).
+// avatar.glb trae malla + esqueleto + clip de reposo; avatar_walk/run.glb traen
+// SOLO el clip (huesos sin malla), que se reaplica al esqueleto por nombre.
+export const AVATAR_MODEL_URL = '/avatar.glb' // malla + esqueleto + clip de reposo
+export const AVATAR_WALK_URL = '/avatar_walk.glb' // solo clip de caminar (in place)
+export const AVATAR_RUN_URL = '/avatar_run.glb' // solo clip de correr (in place)
 
-// Mixamo exporta en centímetros (~180 u); escalamos a ~1.8 u. Para un .glb en
-// metros usa SCALE ≈ 1. Ajustado sobre el render.
-const IS_GLTF = !!AVATAR_MODEL_URL && /\.glb|\.gltf$/i.test(AVATAR_MODEL_URL)
-const SCALE = IS_GLTF ? 1 : 0.0105
+// El GLB conserva la misma jerarquía y unidades del FBX de Mixamo (GLTFExporter
+// no rehornea las transformaciones), así que la escala es la misma que usábamos
+// con useFBX. Ajustado sobre el render.
+const SCALE = 0.0105
 // Apoyo en el suelo: este rig tiene el pivote a la altura de la cadera (los pies
 // quedan ~0.55 bajo el origen ya escalado) y el grupo del avatar está ~0.2 bajo
 // la tapa de pasto. Subimos para que los pies toquen el suelo.
@@ -56,40 +58,35 @@ function tuneMaterials(model) {
   })
 }
 
-function GltfAvatar() {
-  const { scene } = useGLTF(AVATAR_MODEL_URL)
-  const model = useMemo(() => scene.clone(true), [scene])
-  useLayoutEffect(() => tuneMaterials(model), [model])
-  return <primitive object={model} scale={SCALE} position={[0, FOOT_Y, 0]} />
-}
-
 const _wp = new THREE.Vector3()
 
-function FbxAvatar() {
+function GlbAvatar() {
   const ref = useRef()
-  // Una sola instancia: usamos el objeto directo (sin clonar el skinned mesh).
-  const fbx = useFBX(AVATAR_MODEL_URL) // malla + esqueleto + clip de reposo
-  const walkFbx = AVATAR_WALK_URL ? useFBX(AVATAR_WALK_URL) : null // solo su clip
-  const runFbx = AVATAR_RUN_URL ? useFBX(AVATAR_RUN_URL) : null // solo su clip
+  // Una sola instancia: usamos la escena directa (sin clonar el skinned mesh,
+  // que clone(true) rompería el binding del esqueleto).
+  const gltf = useGLTF(AVATAR_MODEL_URL) // malla + esqueleto + clip de reposo
+  const walkGlb = AVATAR_WALK_URL ? useGLTF(AVATAR_WALK_URL) : null // solo su clip
+  const runGlb = AVATAR_RUN_URL ? useGLTF(AVATAR_RUN_URL) : null // solo su clip
+  const scene = gltf.scene
 
   // Combina el clip de reposo (del modelo) con los de caminar y correr (de los
-  // otros FBX), todos aplicados al esqueleto del modelo renderizado.
+  // otros GLB), todos aplicados al esqueleto del modelo renderizado por nombre.
   const clips = useMemo(() => {
     const out = []
-    const idle = fbx.animations?.[0]
+    const idle = gltf.animations?.[0]
     if (idle) { idle.name = 'idle'; out.push(idle) }
-    const walk = walkFbx?.animations?.[0]
+    const walk = walkGlb?.animations?.[0]
     if (walk) { walk.name = 'walk'; out.push(walk) }
-    const run = runFbx?.animations?.[0]
+    const run = runGlb?.animations?.[0]
     if (run) { run.name = 'run'; out.push(run) }
     return out
-  }, [fbx, walkFbx, runFbx])
+  }, [gltf, walkGlb, runGlb])
 
   const { actions } = useAnimations(clips, ref)
   const last = useRef(new THREE.Vector3())
   const inited = useRef(false)
 
-  useLayoutEffect(() => tuneMaterials(fbx), [fbx])
+  useLayoutEffect(() => tuneMaterials(scene), [scene])
 
   useEffect(() => {
     // Todos los clips reproducen siempre; el peso decide cuál se ve.
@@ -138,18 +135,15 @@ function FbxAvatar() {
 
   return (
     <group ref={ref}>
-      <primitive object={fbx} scale={SCALE} position={[0, FOOT_Y, 0]} />
+      <primitive object={scene} scale={SCALE} position={[0, FOOT_Y, 0]} />
     </group>
   )
 }
 
 export function AvatarModel() {
-  return IS_GLTF ? <GltfAvatar /> : <FbxAvatar />
+  return <GlbAvatar />
 }
 
-if (AVATAR_MODEL_URL) {
-  if (IS_GLTF) useGLTF.preload(AVATAR_MODEL_URL)
-  else useFBX.preload(AVATAR_MODEL_URL)
-}
-if (AVATAR_WALK_URL) useFBX.preload(AVATAR_WALK_URL)
-if (AVATAR_RUN_URL) useFBX.preload(AVATAR_RUN_URL)
+if (AVATAR_MODEL_URL) useGLTF.preload(AVATAR_MODEL_URL)
+if (AVATAR_WALK_URL) useGLTF.preload(AVATAR_WALK_URL)
+if (AVATAR_RUN_URL) useGLTF.preload(AVATAR_RUN_URL)

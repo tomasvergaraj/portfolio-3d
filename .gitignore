@@ -2,6 +2,7 @@ node_modules
 dist
 dist-ssr
 screenshots
+tmp
 character
 # Los modelos 3D de public/ SÍ se versionan: el deploy (Vercel) los necesita,
 # si no, el mundo cae a primitivas. Los GLB ya van comprimidos con meshopt; los
