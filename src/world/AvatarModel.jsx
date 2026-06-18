@@ -1,5 +1,5 @@
-import React, { useLayoutEffect, useMemo } from 'react'
-import { useFBX, useGLTF } from '@react-three/drei'
+import React, { useRef, useEffect, useLayoutEffect, useMemo } from 'react'
+import { useFBX, useGLTF, useAnimations } from '@react-three/drei'
 import * as THREE from 'three'
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -11,16 +11,21 @@ import * as THREE from 'three'
 //                 Mixamo como "FBX Binary" (es 7.x) o convierte a .glb.
 //
 // Con `null` el Player usa el avatar de primitivas (sin cargar nada).
-export const AVATAR_MODEL_URL = null // ej. '/character.glb' o '/character.fbx'
+export const AVATAR_MODEL_URL = '/character_inactive.fbx' // ej. '/character.glb'
 
 // Mixamo exporta en centímetros (~180 u); escalamos a ~1.8 u. Para un .glb en
-// metros usa SCALE ≈ 1. Ajusta tras ver el render.
-const SCALE = AVATAR_MODEL_URL && /\.glb|\.gltf$/i.test(AVATAR_MODEL_URL) ? 1 : 0.0105
+// metros usa SCALE ≈ 1. Ajustado sobre el render.
 const IS_GLTF = !!AVATAR_MODEL_URL && /\.glb|\.gltf$/i.test(AVATAR_MODEL_URL)
+const SCALE = IS_GLTF ? 1 : 0.0105
+// Apoyo en el suelo: este rig tiene el pivote a la altura de la cadera (los pies
+// quedan ~0.55 bajo el origen ya escalado) y el grupo del avatar está ~0.2 bajo
+// la tapa de pasto. Subimos para que los pies toquen el suelo. (Tuneado sobre el
+// render; para un .glb con pies en el origen bastaría ~0.2.)
+const FOOT_Y = 0.75
 
-function tuneAndPose(model) {
+function tuneMaterials(model) {
   model.traverse((o) => {
-    if (o.isMesh) {
+    if (o.isMesh || o.isSkinnedMesh) {
       o.castShadow = true
       o.receiveShadow = false
       o.frustumCulled = false
@@ -33,30 +38,43 @@ function tuneAndPose(model) {
       }
     }
   })
-  // Pose-A: baja los brazos desde la pose-T (si el rig es de Mixamo y no hay
-  // animación). Inofensivo si los huesos no existen.
-  const lower = (name, sign) => {
-    const bone = model.getObjectByName(name)
-    if (bone) bone.rotation.z += sign * 1.05
-  }
-  lower('mixamorigLeftArm', 1)
-  lower('mixamorigRightArm', -1)
 }
 
 function GltfAvatar() {
   const { scene } = useGLTF(AVATAR_MODEL_URL)
   const model = useMemo(() => scene.clone(true), [scene])
-  useLayoutEffect(() => tuneAndPose(model), [model])
-  return <primitive object={model} scale={SCALE} position={[0, 0, 0]} rotation={[0, Math.PI, 0]} />
+  useLayoutEffect(() => tuneMaterials(model), [model])
+  return <primitive object={model} scale={SCALE} position={[0, FOOT_Y, 0]} rotation={[0, Math.PI, 0]} />
 }
 
 function FbxAvatar() {
+  const ref = useRef()
+  // Una sola instancia: usamos el objeto directo (sin clonar el skinned mesh).
   const fbx = useFBX(AVATAR_MODEL_URL)
-  const model = useMemo(() => fbx.clone(true), [fbx])
-  useLayoutEffect(() => tuneAndPose(model), [model])
-  return <primitive object={model} scale={SCALE} position={[0, 0.2, 0]} rotation={[0, Math.PI, 0]} />
+  const { actions } = useAnimations(fbx.animations, ref)
+
+  useLayoutEffect(() => tuneMaterials(fbx), [fbx])
+
+  useEffect(() => {
+    // Reproduce el clip de inactivo (Mixamo exporta una sola "take").
+    const a = Object.values(actions)[0]
+    if (!a) return
+    a.reset().setLoop(THREE.LoopRepeat, Infinity).play()
+    return () => a.stop()
+  }, [actions])
+
+  return (
+    <group ref={ref}>
+      <primitive object={fbx} scale={SCALE} position={[0, FOOT_Y, 0]} rotation={[0, Math.PI, 0]} />
+    </group>
+  )
 }
 
 export function AvatarModel() {
   return IS_GLTF ? <GltfAvatar /> : <FbxAvatar />
+}
+
+if (AVATAR_MODEL_URL) {
+  if (IS_GLTF) useGLTF.preload(AVATAR_MODEL_URL)
+  else useFBX.preload(AVATAR_MODEL_URL)
 }
