@@ -7,6 +7,31 @@ import React from 'react'
 
 export const RING_RADIUS = 14
 
+// Insignia de proyecto: muestra el favicon oficial del sitio en vivo (lo carga
+// el navegador) y, si no hay sitio o falla, cae a las iniciales sobre color.
+function ProjBadge({ domain, label, color }) {
+  const [failed, setFailed] = React.useState(false)
+  if (!domain || failed) {
+    return (
+      <div className="pj-badge" style={{ background: color }}>
+        {label}
+      </div>
+    )
+  }
+  return (
+    <div className="pj-badge" style={{ background: '#fff', padding: 5 }}>
+      <img
+        src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`}
+        alt=""
+        width="100%"
+        height="100%"
+        style={{ objectFit: 'contain', display: 'block' }}
+        onError={() => setFailed(true)}
+      />
+    </div>
+  )
+}
+
 export const STATIONS = [
   {
     id: 'sobre',
@@ -24,7 +49,7 @@ export const STATIONS = [
         <p className="ov-lead">
           Hola, soy <strong>Tomás Vergara</strong>, desarrollador full-stack desde Quillota, Región
           de Valparaíso. Fundé <strong>Nexo Software SpA</strong> para llevar software a medida y
-          productos SaaS a empresas, y trabajo como Junior Full Stack Developer en el Hospital
+          productos SaaS a empresas, y trabajo como Full Stack Developer en el Hospital
           Biprovincial Quillota–Petorca.
         </p>
         <p className="ov-lead">
@@ -73,7 +98,7 @@ export const STATIONS = [
         <div className="proj-grid">
           <div className="proj">
             <div className="pj-top">
-              <div className="pj-badge" style={{ background: '#22b07d' }}>NF</div>
+              <ProjBadge domain="nexofitness.cl" label="NF" color="#22b07d" />
               <span className="pj-tag">SaaS</span>
             </div>
             <h4>Nexo Fitness</h4>
@@ -92,7 +117,7 @@ export const STATIONS = [
 
           <div className="proj">
             <div className="pj-top">
-              <div className="pj-badge" style={{ background: '#e8732a' }}>HB</div>
+              <ProjBadge domain="hambuscador.cl" label="HB" color="#e8732a" />
               <span className="pj-tag">Full Stack</span>
             </div>
             <h4>Hambuscador</h4>
@@ -111,7 +136,7 @@ export const STATIONS = [
 
           <div className="proj">
             <div className="pj-top">
-              <div className="pj-badge" style={{ background: '#2563eb' }}>NC</div>
+              <ProjBadge domain="cotiza.nexosoftware.cl" label="NC" color="#2563eb" />
               <span className="pj-tag">PWA</span>
             </div>
             <h4>NexoCotiza</h4>
@@ -130,7 +155,7 @@ export const STATIONS = [
 
           <div className="proj">
             <div className="pj-top">
-              <div className="pj-badge" style={{ background: '#1f1f24' }}>NT</div>
+              <ProjBadge domain="transcribe.nexosoftware.cl" label="NT" color="#1f1f24" />
               <span className="pj-tag">Full Stack · IA</span>
             </div>
             <h4>Nexo Transcriptor</h4>
@@ -149,7 +174,7 @@ export const STATIONS = [
 
           <div className="proj">
             <div className="pj-top">
-              <div className="pj-badge" style={{ background: '#3b6ef0' }}>SS</div>
+              <ProjBadge domain="sistema-sumariales-demo.vercel.app" label="SS" color="#3b6ef0" />
               <span className="pj-tag">Full Stack</span>
             </div>
             <h4>Sistema de Sumariales</h4>
@@ -168,7 +193,7 @@ export const STATIONS = [
 
           <div className="proj">
             <div className="pj-top">
-              <div className="pj-badge" style={{ background: '#8a5630' }}>MP</div>
+              <ProjBadge label="MP" color="#8a5630" />
               <span className="pj-tag">Escritorio</span>
             </div>
             <h4>Minimarket POS</h4>
@@ -287,7 +312,7 @@ export const STATIONS = [
           <div className="exp">
             <div className="when">2025 — Presente</div>
             <div>
-              <h4>Junior Full Stack Developer</h4>
+              <h4>Full Stack Developer</h4>
               <div className="org">Hospital Biprovincial Quillota–Petorca</div>
               <p>
                 Desarrollo de aplicaciones web escalables con React y Node.js, y sistemas internos de

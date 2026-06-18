@@ -556,6 +556,7 @@ button {
   flex: none;
 }
 .cta-card .ck {
+  display: block;
   font-family: "JetBrains Mono";
   font-size: 10.5px;
   letter-spacing: 0.06em;
@@ -563,10 +564,12 @@ button {
   color: var(--ink-soft);
 }
 .cta-card .cv {
+  display: block;
   font-family: "Space Grotesk";
   font-size: 15.5px;
   font-weight: 600;
   margin-top: 2px;
+  word-break: break-word;
 }
 .contact-line {
   margin-top: 24px;
