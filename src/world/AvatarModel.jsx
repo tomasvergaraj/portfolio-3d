@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useLayoutEffect, useMemo } from 'react'
 import { useFBX, useGLTF, useAnimations } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { readInput } from '../controls/input'
 
 // ─────────────────────────────────────────────────────────────────────────
 // Avatar 3D real (Mixamo u otro). Para activarlo, deja un modelo válido en
@@ -15,6 +16,9 @@ export const AVATAR_MODEL_URL = '/character_inactive.fbx' // modelo + clip de re
 // FBX con SOLO el clip de caminar, "in place" (sin desplazamiento de raíz, que
 // si no haría derivar al personaje). Mismo rig de Mixamo. null = solo reposo.
 export const AVATAR_WALK_URL = '/character_walk_in_place.fbx'
+// FBX con SOLO el clip de correr (in place). Se usa al hacer sprint. null = sin
+// correr (se queda en walk al sprintar).
+export const AVATAR_RUN_URL = '/character_running.fbx'
 
 // Mixamo exporta en centímetros (~180 u); escalamos a ~1.8 u. Para un .glb en
 // metros usa SCALE ≈ 1. Ajustado sobre el render.
@@ -27,9 +31,13 @@ const FOOT_Y = 0.75
 // Velocidad base del avatar (SPEED en Player). Normaliza la velocidad de la
 // animación de caminar.
 const BASE_SPEED = 6.4
-// El clip de Mixamo es un "walk" tranquilo; a la velocidad real del avatar hay
-// que acelerarlo para que no patine. Multiplicador del timeScale al caminar.
+// Velocidad del avatar al hacer sprint (SPEED * SPRINT_MULT en Player). Normaliza
+// la animación de correr.
+const SPRINT_SPEED = 6.4 * 1.85
+// Los clips de Mixamo son tranquilos; a la velocidad real del avatar hay que
+// acelerarlos para que no patinen. Multiplicadores del timeScale.
 const WALK_ANIM_MULT = 1.6
+const RUN_ANIM_MULT = 1.1
 
 function tuneMaterials(model) {
   model.traverse((o) => {
@@ -62,17 +70,20 @@ function FbxAvatar() {
   // Una sola instancia: usamos el objeto directo (sin clonar el skinned mesh).
   const fbx = useFBX(AVATAR_MODEL_URL) // malla + esqueleto + clip de reposo
   const walkFbx = AVATAR_WALK_URL ? useFBX(AVATAR_WALK_URL) : null // solo su clip
+  const runFbx = AVATAR_RUN_URL ? useFBX(AVATAR_RUN_URL) : null // solo su clip
 
-  // Combina el clip de reposo (del modelo) con el de caminar (del otro FBX),
-  // ambos aplicados al esqueleto del modelo renderizado.
+  // Combina el clip de reposo (del modelo) con los de caminar y correr (de los
+  // otros FBX), todos aplicados al esqueleto del modelo renderizado.
   const clips = useMemo(() => {
     const out = []
     const idle = fbx.animations?.[0]
     if (idle) { idle.name = 'idle'; out.push(idle) }
     const walk = walkFbx?.animations?.[0]
     if (walk) { walk.name = 'walk'; out.push(walk) }
+    const run = runFbx?.animations?.[0]
+    if (run) { run.name = 'run'; out.push(run) }
     return out
-  }, [fbx, walkFbx])
+  }, [fbx, walkFbx, runFbx])
 
   const { actions } = useAnimations(clips, ref)
   const last = useRef(new THREE.Vector3())
@@ -81,19 +92,18 @@ function FbxAvatar() {
   useLayoutEffect(() => tuneMaterials(fbx), [fbx])
 
   useEffect(() => {
-    const idle = actions.idle
-    const walk = actions.walk
-    if (idle) idle.reset().play().setEffectiveWeight(1)
-    if (walk) walk.reset().play().setEffectiveWeight(0)
+    // Todos los clips reproducen siempre; el peso decide cuál se ve.
+    for (const name of ['idle', 'walk', 'run']) {
+      const a = actions[name]
+      if (a) a.reset().play().setEffectiveWeight(name === 'idle' ? 1 : 0)
+    }
     return () => {
-      idle?.stop()
-      walk?.stop()
+      for (const name of ['idle', 'walk', 'run']) actions[name]?.stop()
     }
   }, [actions])
 
   useFrame((_, dt) => {
-    const idle = actions.idle
-    const walk = actions.walk
+    const { idle, walk, run } = actions
     const g = ref.current
     if (!g) return
     g.getWorldPosition(_wp)
@@ -106,18 +116,24 @@ function FbxAvatar() {
     const speed = step / Math.max(dt, 1e-3)
 
     if (!walk) return
-    // Mezcla reposo↔caminar según se mueva el avatar; suavizado estable a dt.
-    // Umbral bajo: en reposo la velocidad es 0, así que cualquier avance la
-    // supera (robusto al framerate y al tope de delta del Player).
+    // Clasifica el estado: la velocidad (delta de posición) detecta movimiento
+    // de forma robusta al framerate y al congelado (con panel abierto no se
+    // mueve → reposo). El sprint viene del input (Shift / joystick a fondo).
     const moving = speed > 0.12
+    const sprint = readInput().sprint
+    const running = moving && sprint && !!run
+    const walking = moving && !running
+
+    // Cross-fade de los tres pesos hacia su objetivo (suavizado estable a dt).
     const k = 1 - Math.pow(0.0001, dt)
-    const w = THREE.MathUtils.lerp(walk.getEffectiveWeight(), moving ? 1 : 0, k)
-    walk.setEffectiveWeight(w)
-    if (idle) idle.setEffectiveWeight(1 - w)
+    const lerpW = (a, target) => a && a.setEffectiveWeight(THREE.MathUtils.lerp(a.getEffectiveWeight(), target, k))
+    lerpW(idle, !moving ? 1 : 0)
+    lerpW(walk, walking ? 1 : 0)
+    lerpW(run, running ? 1 : 0)
+
     // Acelera las piernas con la velocidad real para no patinar.
-    walk.setEffectiveTimeScale(
-      THREE.MathUtils.clamp((speed / BASE_SPEED) * WALK_ANIM_MULT, 0.8, 3)
-    )
+    walk.setEffectiveTimeScale(THREE.MathUtils.clamp((speed / BASE_SPEED) * WALK_ANIM_MULT, 0.8, 3))
+    if (run) run.setEffectiveTimeScale(THREE.MathUtils.clamp((speed / SPRINT_SPEED) * RUN_ANIM_MULT, 0.8, 3))
   })
 
   return (
@@ -136,3 +152,4 @@ if (AVATAR_MODEL_URL) {
   else useFBX.preload(AVATAR_MODEL_URL)
 }
 if (AVATAR_WALK_URL) useFBX.preload(AVATAR_WALK_URL)
+if (AVATAR_RUN_URL) useFBX.preload(AVATAR_RUN_URL)
