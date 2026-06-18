@@ -88,7 +88,7 @@ function Avatar({ groupRef, bodyRef }) {
           <PrimitiveBody />
         )}
       </group>
-      {/* El asentado en el suelo lo da <ContactShadows> en Scene.jsx */}
+      {/* El asentado en el suelo lo da la sombra direccional (castShadow) */}
     </group>
   )
 }

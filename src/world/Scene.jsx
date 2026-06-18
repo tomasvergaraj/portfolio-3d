@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react'
-import { Environment, ContactShadows, Sparkles } from '@react-three/drei'
+import { Environment, Sparkles } from '@react-three/drei'
 import { Island } from './Island'
 import { Sky } from './Sky'
 import { Water } from './Water'
@@ -48,18 +48,9 @@ export function Scene({ reducedMotion = false }) {
 
       <Island />
 
-      {/* Charco de sombra suave que asienta todo en el suelo (incluye al avatar
-          y al perro en movimiento). Complementa las sombras direccionales y da
-          sensación de oclusión de contacto en la paleta low-poly. */}
-      <ContactShadows
-        position={[0, 0.72, 0]}
-        scale={52}
-        resolution={1024}
-        blur={2.6}
-        far={9}
-        opacity={0.42}
-        color="#2a3b2a"
-      />
+      {/* Sin charco de sombra de contacto global: dejaba una "marca" oscura que
+          seguía al avatar y al perro por el suelo. El asentado lo dan ahora las
+          sombras direccionales reales (la isla y los caminos las reciben). */}
 
       <Water animate={!reducedMotion} />
       <Scenery />
