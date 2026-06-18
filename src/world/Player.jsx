@@ -7,6 +7,7 @@ import { STATIONS, stationPosition } from '../data/stations'
 import { AvatarModel, AVATAR_MODEL_URL } from './AvatarModel'
 import { DogModel, DOG_MODEL_URL } from './DogModel'
 import { ModelBoundary } from './ModelBoundary'
+import { playerPos } from './playerState'
 
 const SPEED = 6.4
 const SPRINT_MULT = 1.85 // velocidad al correr (Shift / joystick a fondo)
@@ -203,6 +204,8 @@ export function Player() {
       g.position.x *= CLAMP_R / r
       g.position.z *= CLAMP_R / r
     }
+    // Comparte la posición para otros sistemas (pasto reactivo, etc.)
+    playerPos.copy(g.position)
 
     // Balanceo al caminar (más rápido y marcado al correr). Con el avatar
     // animado lo da su propio clip de caminar; no añadimos el rebote procedural.

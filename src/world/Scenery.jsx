@@ -3,13 +3,12 @@ import { Float } from '@react-three/drei'
 import { STATIONS, stationPosition } from '../data/stations'
 import { Instance, preloadModel } from './props'
 import { ModelBoundary } from './ModelBoundary'
+import { Grass } from './Grass'
 
 const TREE_URLS = ['/Tree.glb', '/Tree2.glb']
 const ROCK_URL = '/Resource_Rock_1.fbx'
-const GRASS_URL = '/Grass.glb'
 const TREE_H = 3.6
 const ROCK_H = 0.9
-const GRASS_H = 0.5
 
 // PRNG determinista para que la escena se vea igual en cada carga.
 function mulberry32(seed) {
@@ -123,7 +122,7 @@ export function Scenery() {
       const r = 4.5 + rnd() * 16.5
       const x = Math.cos(a) * r
       const z = Math.sin(a) * r
-      grass.push({ position: [x, 0, z], scale: 0.7 + rnd() * 0.7, rot: rnd() * Math.PI * 2 })
+      grass.push({ position: [x, 0, z], scale: 0.7 + rnd() * 0.7, rot: rnd() * Math.PI * 2, phase: rnd() * Math.PI * 2 })
     }
 
     return { trees, rocks, grass }
@@ -164,12 +163,10 @@ export function Scenery() {
         </Suspense>
       </ModelBoundary>
 
-      {/* Matas de pasto (sin fallback: detalle decorativo) */}
+      {/* Matas de pasto reactivas (viento + se apartan del personaje) */}
       <ModelBoundary fallback={null}>
         <Suspense fallback={null}>
-          {grass.map((gr, i) => (
-            <Instance key={`g${i}`} url={GRASS_URL} position={gr.position} targetH={GRASS_H} scaleMul={gr.scale} rot={gr.rot} />
-          ))}
+          <Grass items={grass} />
         </Suspense>
       </ModelBoundary>
 
@@ -184,4 +181,3 @@ export function Scenery() {
 preloadModel(TREE_URLS[0])
 preloadModel(TREE_URLS[1])
 preloadModel(ROCK_URL)
-preloadModel(GRASS_URL)
