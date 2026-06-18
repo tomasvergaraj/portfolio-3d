@@ -2,6 +2,7 @@ import React, { Suspense } from 'react'
 import { Environment, Sparkles } from '@react-three/drei'
 import { Island } from './Island'
 import { Walkway } from './Walkway'
+import { Instance } from './props'
 import { ModelBoundary } from './ModelBoundary'
 import { Sky } from './Sky'
 import { Water } from './Water'
@@ -54,6 +55,13 @@ export function Scene({ reducedMotion = false }) {
       <ModelBoundary fallback={null}>
         <Suspense fallback={null}>
           <Walkway />
+        </Suspense>
+      </ModelBoundary>
+
+      {/* Centro del pueblo en la plaza */}
+      <ModelBoundary fallback={null}>
+        <Suspense fallback={null}>
+          <Instance url="/TownCenter.glb" position={[0, 0, 0]} targetH={3} />
         </Suspense>
       </ModelBoundary>
 

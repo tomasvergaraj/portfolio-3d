@@ -38,24 +38,27 @@ export function Island() {
         <meshStandardMaterial color="#e6d6b0" roughness={1} side={THREE.DoubleSide} />
       </mesh>
 
-      {/* Base de los caminos del centro a cada estación (debajo del empedrado) */}
-      {paths.map((p) => (
-        <mesh
-          key={p.id}
-          rotation={[-Math.PI / 2, 0, -p.angle]}
-          position={[p.x / 2, 0.73, p.z / 2]}
-          receiveShadow
-        >
-          <planeGeometry args={[2.4, p.len + 1.5]} />
-          <meshStandardMaterial color="#cdbd97" roughness={1} />
-        </mesh>
-      ))}
-
-      {/* Plaza central */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.74, 0]} receiveShadow>
-        <circleGeometry args={[3.2, 48]} />
-        <meshStandardMaterial color="#ddc9a0" roughness={1} />
-      </mesh>
+      {/* Base de tierra solo en el tramo EXTERIOR de cada camino (el centro
+          queda con el empedrado y el Town Center; sin base café en el medio). */}
+      {paths.map((p) => {
+        const dirx = p.x / p.len
+        const dirz = p.z / p.len
+        const rInner = 7 // a partir de aquí hacia afuera
+        const rOuter = p.len + 0.5
+        const segLen = rOuter - rInner
+        const midR = (rInner + rOuter) / 2
+        return (
+          <mesh
+            key={p.id}
+            rotation={[-Math.PI / 2, 0, -p.angle]}
+            position={[dirx * midR, 0.73, dirz * midR]}
+            receiveShadow
+          >
+            <planeGeometry args={[2.4, segLen]} />
+            <meshStandardMaterial color="#cdbd97" roughness={1} />
+          </mesh>
+        )
+      })}
     </group>
   )
 }
