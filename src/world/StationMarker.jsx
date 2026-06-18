@@ -4,6 +4,7 @@ import { Html, Float } from '@react-three/drei'
 import { useStore } from '../store'
 import { StationModel, hasStationModel } from './StationModel'
 import { ModelBoundary } from './ModelBoundary'
+import { StationIcon } from './StationIcon'
 
 // ---- Monumentos por tipo -------------------------------------------------
 
@@ -184,7 +185,7 @@ export function StationMarker({ station, position }) {
             userSelect: 'none',
           }}
         >
-          <span style={{ color: nearby ? '#fff' : station.color, fontSize: 13 }}>{station.icon}</span>
+          <StationIcon id={station.id} size={16} color={nearby ? '#fff' : station.color} />
           {station.name}
         </div>
       </Html>
