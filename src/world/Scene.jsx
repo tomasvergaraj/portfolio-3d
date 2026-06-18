@@ -10,7 +10,7 @@ import { Scenery } from './Scenery'
 import { Player } from './Player'
 import { StationMarker } from './StationMarker'
 import { Effects } from './Effects'
-import { Leaves, DayNight } from './Ambiance'
+import { Leaves, DayNight, Butterflies, Fireflies, Birds } from './Ambiance'
 import { Dust } from './Dust'
 import { STATIONS, stationPosition } from '../data/stations'
 
@@ -98,6 +98,15 @@ export function Scene({ reducedMotion = false }) {
       {/* Hojas que caen y ciclo de luz suave (día/noche) */}
       <Leaves reducedMotion={reducedMotion} />
       {!reducedMotion && <DayNight lightRef={keyLight} />}
+
+      {/* Criaturas ambientales (se congelan con prefers-reduced-motion) */}
+      {!reducedMotion && (
+        <>
+          <Butterflies />
+          <Fireflies />
+          <Birds />
+        </>
+      )}
 
       <Effects />
     </>
