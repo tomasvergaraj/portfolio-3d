@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useRef } from 'react'
 import { useGLTF, useFBX } from '@react-three/drei'
+import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -28,7 +29,7 @@ function tune(o) {
 // `targetH` (× scaleMul) y apoya su base en el suelo. `rot` puede ser un número
 // (giro en Y) o [x,y,z]. La rotación extra se aplica a un grupo interno para no
 // alterar el cálculo de "base sobre el suelo".
-function Placed({ source, position, targetH, scaleMul = 1, rot = 0, groundY = GROUND_Y }) {
+function Placed({ source, position, targetH, scaleMul = 1, rot = 0, groundY = GROUND_Y, sway = 0 }) {
   const model = useMemo(() => {
     const c = source.clone(true)
     tune(c)
@@ -36,6 +37,8 @@ function Placed({ source, position, targetH, scaleMul = 1, rot = 0, groundY = GR
   }, [source])
 
   const euler = Array.isArray(rot) ? rot : [0, rot || 0, 0]
+  const innerRef = useRef()
+  const phase = useMemo(() => Math.random() * Math.PI * 2, [])
 
   const { s, baseLift } = useMemo(() => {
     model.updateMatrixWorld(true) // aplica los transforms internos del nodo
@@ -46,10 +49,18 @@ function Placed({ source, position, targetH, scaleMul = 1, rot = 0, groundY = GR
     return { s, baseLift: -_box.min.y }
   }, [model, targetH, scaleMul])
 
+  // Vaivén de viento opcional (p. ej. árboles): mece el modelo desde su base.
+  useFrame((state) => {
+    if (!sway || !innerRef.current) return
+    const t = state.clock.elapsedTime
+    innerRef.current.rotation.z = euler[2] + Math.sin(t * 0.8 + phase) * sway
+    innerRef.current.rotation.x = euler[0] + Math.cos(t * 0.6 + phase) * sway * 0.7
+  })
+
   return (
     <group position={[position[0], groundY, position[2]]} rotation={[0, euler[1], 0]} scale={s}>
       {/* Inclinación (x/z) alrededor del propio modelo, ya apoyado en el suelo */}
-      <group rotation={[euler[0], 0, euler[2]]}>
+      <group ref={innerRef} rotation={[euler[0], 0, euler[2]]}>
         <primitive object={model} position={[0, baseLift, 0]} />
       </group>
     </group>

@@ -11,6 +11,7 @@ import { Player } from './Player'
 import { StationMarker } from './StationMarker'
 import { Effects } from './Effects'
 import { Leaves, DayNight } from './Ambiance'
+import { Dust } from './Dust'
 import { STATIONS, stationPosition } from '../data/stations'
 
 export function Scene({ reducedMotion = false }) {
@@ -80,6 +81,7 @@ export function Scene({ reducedMotion = false }) {
       ))}
 
       <Player />
+      <Dust />
 
       {/* Motas que flotan en el aire y captan la luz: dan vida y un aire cálido
           al mundo. Se congelan con prefers-reduced-motion. */}

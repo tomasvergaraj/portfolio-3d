@@ -7,7 +7,7 @@ import { STATIONS, stationPosition } from '../data/stations'
 import { AvatarModel, AVATAR_MODEL_URL } from './AvatarModel'
 import { DogModel, DOG_MODEL_URL } from './DogModel'
 import { ModelBoundary } from './ModelBoundary'
-import { playerPos } from './playerState'
+import { playerPos, playerMotion } from './playerState'
 
 const SPEED = 6.4
 const SPRINT_MULT = 1.85 // velocidad al correr (Shift / joystick a fondo)
@@ -42,6 +42,12 @@ const smooth = (p) => p * p * (3 - 2 * p)
 const INTRO_START_POS = new THREE.Vector3(0, 34, 46)
 const INTRO_LOOK = new THREE.Vector3(0, 2, 0)
 const INTRO_DUR = 2.8
+
+// Cámara en reposo: tras unos segundos sin moverse, órbita lenta del mundo.
+const IDLE_DELAY = 12 // s sin moverse para empezar a orbitar
+const ORBIT_R = 33
+const ORBIT_Y = 17
+const ORBIT_SPEED = 0.06 // rad/s
 
 // Posiciones precalculadas de las estaciones (para la proximidad).
 const STATION_POS = STATIONS.map((s) => {
@@ -183,6 +189,7 @@ export function Player() {
   const walk = useRef(0)
   const dogGait = useRef(0)
   const intro = useRef({ started: false, t: 0 })
+  const idle = useRef({ t: 0, orbiting: false, a: 0 })
   // Punto al que mira la cámara, interpolado para transiciones suaves.
   // Se inicia en el objetivo del avatar para no barrer al cargar.
   const lookAt = useRef(new THREE.Vector3(0, GROUND_Y + 0.5, 6))
@@ -215,8 +222,10 @@ export function Player() {
       g.position.x *= CLAMP_R / r
       g.position.z *= CLAMP_R / r
     }
-    // Comparte la posición para otros sistemas (pasto reactivo, etc.)
+    // Comparte la posición y el movimiento para otros sistemas (pasto, polvo…)
     playerPos.copy(g.position)
+    playerMotion.moving = moving
+    playerMotion.sprint = sprint && moving
 
     // Balanceo al caminar (más rápido y marcado al correr). Con el avatar
     // animado lo da su propio clip de caminar; no añadimos el rebote procedural.
@@ -285,6 +294,20 @@ export function Player() {
     // se interpola para que la transición entrar/salir no salte.
     const cam = state.camera
     const station = active ? STATION_POS.find((s) => s.id === active) : null
+
+    // Inactividad: cuenta el tiempo sin moverse (y sin panel) para orbitar.
+    if (moving || active) idle.current.t = 0
+    else idle.current.t += Math.min(dt, 0.4)
+    const introDone = intro.current.t >= INTRO_DUR
+    const wantOrbit = ready && introDone && !station && idle.current.t > IDLE_DELAY
+    if (wantOrbit && !idle.current.orbiting) {
+      // Empieza la órbita desde el ángulo actual de la cámara (transición suave).
+      idle.current.orbiting = true
+      idle.current.a = Math.atan2(cam.position.x, cam.position.z)
+    } else if (!wantOrbit) {
+      idle.current.orbiting = false
+    }
+
     if (station) {
       _camDesired.set(
         station.x + CAM_OFFSET.x * 0.52,
@@ -292,6 +315,10 @@ export function Player() {
         station.z + CAM_OFFSET.z * 0.52
       )
       _lookDesired.set(station.x, 2.4, station.z)
+    } else if (idle.current.orbiting) {
+      idle.current.a += d * ORBIT_SPEED
+      _camDesired.set(Math.sin(idle.current.a) * ORBIT_R, ORBIT_Y, Math.cos(idle.current.a) * ORBIT_R)
+      _lookDesired.set(0, 2.5, 0)
     } else {
       _camDesired.set(
         g.position.x + CAM_OFFSET.x,

@@ -149,7 +149,7 @@ export function Scenery() {
       <ModelBoundary fallback={proceduralTrees}>
         <Suspense fallback={proceduralTrees}>
           {trees.map((t, i) => (
-            <Instance key={`t${i}`} url={t.url} position={t.position} targetH={TREE_H} scaleMul={t.scale} rot={t.rot} />
+            <Instance key={`t${i}`} url={t.url} position={t.position} targetH={TREE_H} scaleMul={t.scale} rot={t.rot} sway={0.05} />
           ))}
         </Suspense>
       </ModelBoundary>

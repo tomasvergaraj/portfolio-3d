@@ -95,6 +95,7 @@ function Monument({ kind, color }) {
 export function StationMarker({ station, position }) {
   const beaconRef = useRef()
   const lightRef = useRef()
+  const monRef = useRef()
   const [hovered, setHovered] = useState(false)
   const nearby = useStore((s) => s.nearby === station.id)
   const open = useStore((s) => s.open)
@@ -106,13 +107,22 @@ export function StationMarker({ station, position }) {
   useFrame((state) => {
     const t = state.clock.elapsedTime
     const pulse = 0.5 + Math.sin(t * 2 + station.angle) * 0.5
+    const focus = hovered || nearby
     if (beaconRef.current) {
-      beaconRef.current.material.emissiveIntensity = 1.4 + pulse * 1.6
-      const s = 1 + pulse * 0.12
+      beaconRef.current.material.emissiveIntensity = 1.4 + pulse * 1.6 + (focus ? 1.6 : 0)
+      const s = 1 + pulse * 0.12 + (focus ? 0.18 : 0)
       beaconRef.current.scale.setScalar(s)
     }
     if (lightRef.current) {
-      lightRef.current.intensity = 2 + pulse * 2
+      lightRef.current.intensity = 2 + pulse * 2 + (focus ? 2 : 0)
+    }
+    // Monumento: rebote/escala al enfocar (hover o cercanía).
+    if (monRef.current) {
+      const target = focus ? 1.08 : 1
+      const ns = monRef.current.scale.x + (target - monRef.current.scale.x) * 0.15
+      monRef.current.scale.setScalar(ns)
+      const bob = hovered ? (Math.sin(t * 3) * 0.5 + 0.5) * 0.18 : 0
+      monRef.current.position.y += (bob - monRef.current.position.y) * 0.15
     }
   })
 
@@ -133,16 +143,18 @@ export function StationMarker({ station, position }) {
       }}
     >
       {/* Monumento: modelo 3D real (public/<id>.glb) si existe; si no, las
-          primitivas. El modelo se auto-ajusta a tamaño/suelo. */}
-      {hasModel ? (
-        <ModelBoundary fallback={<Monument kind={station.kind} color={station.color} />}>
-          <Suspense fallback={<Monument kind={station.kind} color={station.color} />}>
-            <StationModel id={station.id} />
-          </Suspense>
-        </ModelBoundary>
-      ) : (
-        <Monument kind={station.kind} color={station.color} />
-      )}
+          primitivas. El modelo se auto-ajusta a tamaño/suelo. Rebota al enfocar. */}
+      <group ref={monRef}>
+        {hasModel ? (
+          <ModelBoundary fallback={<Monument kind={station.kind} color={station.color} />}>
+            <Suspense fallback={<Monument kind={station.kind} color={station.color} />}>
+              <StationModel id={station.id} />
+            </Suspense>
+          </ModelBoundary>
+        ) : (
+          <Monument kind={station.kind} color={station.color} />
+        )}
+      </group>
 
       {/* Faro emisivo (lo recoge el bloom) */}
       <mesh ref={beaconRef} position={[0, 4.4, 0]}>
