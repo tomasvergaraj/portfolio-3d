@@ -14,7 +14,9 @@ export function Hud({ onOpenMenu }) {
     <div className="hud" aria-hidden={hidden}>
       <div className="topbar">
         <div className="brand">
-          <span className="logo">N</span>
+          <span className="logo">
+            <img src="/logo.png" alt="Tomás Vergara" />
+          </span>
           <span className="who">
             <b>Tomás Vergara</b>
             <span>Desarrollador full-stack · Quillota</span>

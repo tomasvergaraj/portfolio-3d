@@ -70,10 +70,11 @@ button {
   width: 60px;
   height: 60px;
   border-radius: 17px;
-  background: var(--accent);
+  background: var(--ink);
   color: #fff;
   display: grid;
   place-items: center;
+  overflow: hidden;
   font-family: "Space Grotesk";
   font-weight: 700;
   font-size: 30px;
@@ -128,18 +129,33 @@ button {
   display: flex;
   align-items: center;
   gap: 11px;
+  padding: 7px 14px 7px 8px;
+  border-radius: 14px;
+  background: rgba(251, 248, 242, 0.82);
+  border: 1px solid var(--line);
+  box-shadow: 0 10px 26px -16px rgba(20, 30, 46, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .brand .logo {
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: var(--accent);
+  background: var(--ink);
   color: #fff;
   display: grid;
   place-items: center;
+  overflow: hidden;
   font-family: "Space Grotesk";
   font-weight: 700;
   font-size: 18px;
+}
+.brand .logo img,
+.loader-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 .brand .who {
   line-height: 1.15;

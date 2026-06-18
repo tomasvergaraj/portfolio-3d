@@ -37,7 +37,7 @@ export function Loader() {
             animate={{ y: [0, -8, 0] }}
             transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
           >
-            N
+            <img src="/logo.png" alt="Tomás Vergara" />
           </motion.div>
           <div className="loader-text">Cargando el mundo…</div>
           <div className="loader-bar">

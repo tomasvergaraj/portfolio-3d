@@ -1,23 +1,11 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import * as THREE from 'three'
-import { STATIONS, stationPosition } from '../data/stations'
 
 const ISLAND_R = 24
 
 // Isla circular: una tapa de pasto, un talud de tierra hacia el agua y un
-// borde de arena. Caminos rectos del centro a cada estación.
+// borde de arena. Los caminos los dibuja el empedrado (Walkway).
 export function Island() {
-  const paths = useMemo(
-    () =>
-      STATIONS.map((st) => {
-        const [x, , z] = stationPosition(st.angle)
-        const len = Math.hypot(x, z)
-        const angle = Math.atan2(x, z) // orientación del camino
-        return { x, z, len, angle, id: st.id }
-      }),
-    []
-  )
-
   return (
     <group>
       {/* Tapa de pasto */}
@@ -37,28 +25,6 @@ export function Island() {
         <ringGeometry args={[ISLAND_R - 2.4, ISLAND_R + 0.3, 72]} />
         <meshStandardMaterial color="#e6d6b0" roughness={1} side={THREE.DoubleSide} />
       </mesh>
-
-      {/* Base de tierra solo en el tramo EXTERIOR de cada camino (el centro
-          queda con el empedrado y el Town Center; sin base café en el medio). */}
-      {paths.map((p) => {
-        const dirx = p.x / p.len
-        const dirz = p.z / p.len
-        const rInner = 7 // a partir de aquí hacia afuera
-        const rOuter = p.len + 0.5
-        const segLen = rOuter - rInner
-        const midR = (rInner + rOuter) / 2
-        return (
-          <mesh
-            key={p.id}
-            rotation={[-Math.PI / 2, 0, -p.angle]}
-            position={[dirx * midR, 0.73, dirz * midR]}
-            receiveShadow
-          >
-            <planeGeometry args={[2.4, segLen]} />
-            <meshStandardMaterial color="#cdbd97" roughness={1} />
-          </mesh>
-        )
-      })}
     </group>
   )
 }
