@@ -3,11 +3,9 @@ dist
 dist-ssr
 screenshots
 character
-# Modelos 3D pesados: se sirven desde public/ en local pero no se versionan
-# (el perro/avatar caen a primitivas si el glb no está). Comprimir antes de
-# publicarlos en un deploy.
-public/*.glb
-public/*.fbx
+# Los modelos 3D de public/ SÍ se versionan: el deploy (Vercel) los necesita,
+# si no, el mundo cae a primitivas. Los GLB ya van comprimidos con meshopt; los
+# FBX del avatar son pesados (~45 MB) — pendiente convertir a GLB para aligerar.
 *.local
 .DS_Store
 .vscode/*
