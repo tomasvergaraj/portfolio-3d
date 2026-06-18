@@ -7,27 +7,31 @@ import React from 'react'
 
 export const RING_RADIUS = 14
 
-// Insignia de proyecto: muestra el favicon oficial del sitio en vivo (lo carga
-// el navegador) y, si no hay sitio o falla, cae a las iniciales sobre color.
-function ProjBadge({ domain, label, color }) {
+// Insignia de proyecto: muestra el logo oficial del producto (si lo hay) y, si
+// no, un icono genérico de "proyecto de código".
+function ProjBadge({ src, color }) {
   const [failed, setFailed] = React.useState(false)
-  if (!domain || failed) {
+  if (src && !failed) {
     return (
-      <div className="pj-badge" style={{ background: color }}>
-        {label}
+      <div className="pj-badge" style={{ background: '#fff', padding: 5 }}>
+        <img
+          src={src}
+          alt=""
+          width="100%"
+          height="100%"
+          style={{ objectFit: 'contain', display: 'block' }}
+          onError={() => setFailed(true)}
+        />
       </div>
     )
   }
   return (
-    <div className="pj-badge" style={{ background: '#fff', padding: 5 }}>
-      <img
-        src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`}
-        alt=""
-        width="100%"
-        height="100%"
-        style={{ objectFit: 'contain', display: 'block' }}
-        onError={() => setFailed(true)}
-      />
+    <div className="pj-badge" style={{ background: color || '#7c8696' }}>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="16" rx="2" />
+        <path d="M9 10l-2 2 2 2" />
+        <path d="M15 10l2 2-2 2" />
+      </svg>
     </div>
   )
 }
@@ -98,7 +102,7 @@ export const STATIONS = [
         <div className="proj-grid">
           <div className="proj">
             <div className="pj-top">
-              <ProjBadge domain="nexofitness.cl" label="NF" color="#22b07d" />
+              <ProjBadge src="/logo-nexofitness.png" />
               <span className="pj-tag">SaaS</span>
             </div>
             <h4>Nexo Fitness</h4>
@@ -117,7 +121,7 @@ export const STATIONS = [
 
           <div className="proj">
             <div className="pj-top">
-              <ProjBadge domain="hambuscador.cl" label="HB" color="#e8732a" />
+              <ProjBadge src="/logo-hambuscador.png" />
               <span className="pj-tag">Full Stack</span>
             </div>
             <h4>Hambuscador</h4>
@@ -136,7 +140,7 @@ export const STATIONS = [
 
           <div className="proj">
             <div className="pj-top">
-              <ProjBadge domain="cotiza.nexosoftware.cl" label="NC" color="#2563eb" />
+              <ProjBadge src="/logo-nexocotiza.png" />
               <span className="pj-tag">PWA</span>
             </div>
             <h4>NexoCotiza</h4>
@@ -155,7 +159,7 @@ export const STATIONS = [
 
           <div className="proj">
             <div className="pj-top">
-              <ProjBadge domain="transcribe.nexosoftware.cl" label="NT" color="#1f1f24" />
+              <ProjBadge src="/logo-nexotranscriptor.png" />
               <span className="pj-tag">Full Stack · IA</span>
             </div>
             <h4>Nexo Transcriptor</h4>
@@ -174,7 +178,7 @@ export const STATIONS = [
 
           <div className="proj">
             <div className="pj-top">
-              <ProjBadge domain="sistema-sumariales-demo.vercel.app" label="SS" color="#3b6ef0" />
+              <ProjBadge color="#3b6ef0" />
               <span className="pj-tag">Full Stack</span>
             </div>
             <h4>Sistema de Sumariales</h4>
@@ -193,7 +197,7 @@ export const STATIONS = [
 
           <div className="proj">
             <div className="pj-top">
-              <ProjBadge label="MP" color="#8a5630" />
+              <ProjBadge src="/logo-nexopos.png" />
               <span className="pj-tag">Escritorio</span>
             </div>
             <h4>Minimarket POS</h4>
