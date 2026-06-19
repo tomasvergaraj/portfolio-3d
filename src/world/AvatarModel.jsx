@@ -99,6 +99,7 @@ function GlbAvatar() {
   const last = useRef(new THREE.Vector3())
   const inited = useRef(false)
   const lastJumpId = useRef(0) // último salto disparado
+  const wasJumping = useRef(false) // estado de salto del frame anterior
 
   useLayoutEffect(() => tuneMaterials(scene), [scene])
 
@@ -144,7 +145,7 @@ function GlbAvatar() {
     // justo antes del despegue (responsivo y en sync con la física).
     if (jump && playerMotion.jumpId !== lastJumpId.current) {
       lastJumpId.current = playerMotion.jumpId
-      jump.reset().play()
+      jump.reset().play() // reset() además quita el "paused" del aterrizaje previo
       jump.time = JUMP_CLIP_START
       jump.setEffectiveTimeScale(JUMP_ANIM_MULT).setEffectiveWeight(1)
     }
@@ -152,6 +153,11 @@ function GlbAvatar() {
     // suelo lo soltamos para que walk/run entre de inmediato, sin quedarse
     // patinando en la pose de recepción.
     const jumping = playerMotion.jumping
+    // Al aterrizar congelamos el clip en la pose de contacto y dejamos que el
+    // crossfade lo apague. Si lo dejáramos avanzar, entraría en el "amortiguado"
+    // (las caderas bajan bajo la altura de pie) y el avatar se hundiría en el suelo.
+    if (jump && wasJumping.current && !jumping) jump.paused = true
+    wasJumping.current = jumping
 
     // Clasifica el estado: la velocidad (delta de posición) detecta movimiento
     // de forma robusta al framerate y al congelado (con panel abierto no se
