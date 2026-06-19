@@ -5,6 +5,7 @@ import { Instance, preloadModel } from './props'
 import { ModelBoundary } from './ModelBoundary'
 import { Grass } from './Grass'
 import { Flowers, FLOWER_COLOR_COUNT } from './Flowers'
+import { WildFlowers } from './WildFlowers'
 
 const TREE_URLS = ['/Tree.glb', '/Tree2.glb']
 const ROCK_URL = '/Resource_Rock_1.fbx'
@@ -191,9 +192,12 @@ export function Scenery() {
       if (!farFromStations(x, z, 2.4)) continue
       flowers.push({
         position: [x, 0, z],
+        rot: rnd() * Math.PI * 2,
+        v: Math.floor(rnd() * 7), // variante del modelo Flowers.glb (7 mallas)
+        scale: 0.7 + rnd() * 0.6, // escala del modelo (alto ~0.35–0.65)
+        // campos para el fallback procedural (Flowers.jsx) si el GLB no carga:
         s: 0.1 + rnd() * 0.07,
         h: 0.06 + rnd() * 0.12,
-        rot: rnd() * Math.PI * 2,
         c: Math.floor(rnd() * FLOWER_COLOR_COUNT),
       })
     }
@@ -243,8 +247,13 @@ export function Scenery() {
         </Suspense>
       </ModelBoundary>
 
-      {/* Flores silvestres que salpican de color la zona verde */}
-      <Flowers items={flowers} />
+      {/* Flores silvestres (modelo Flowers.glb, 7 variantes) salpicadas por la
+          zona verde. Si el GLB no carga, caen a los capullos procedurales. */}
+      <ModelBoundary fallback={<Flowers items={flowers} />}>
+        <Suspense fallback={<Flowers items={flowers} />}>
+          <WildFlowers items={flowers} />
+        </Suspense>
+      </ModelBoundary>
 
       <Cloud3 position={[-16, 16, -10]} scale={1.4} />
       <Cloud3 position={[18, 19, -4]} scale={1.1} />
