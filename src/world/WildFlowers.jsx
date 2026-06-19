@@ -1,6 +1,8 @@
 import React, { useMemo, useRef, useLayoutEffect } from 'react'
 import { useGLTF } from '@react-three/drei'
+import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { sampleWind } from './wind'
 
 // Distribuye las flores del modelo Flowers.glb por la zona verde, con la MISMA
 // distribución que calcula Scenery para las flores procedurales. El GLB trae 7
@@ -59,6 +61,8 @@ export function WildFlowers({ items }) {
 
 function VariantInstances({ variant, group }) {
   const ref = useRef()
+
+  // Pose inicial (antes del primer frame, sin tirón ni flor gigante en el origen).
   useLayoutEffect(() => {
     const m = ref.current
     if (!m) return
@@ -72,6 +76,29 @@ function VariantInstances({ variant, group }) {
     }
     m.instanceMatrix.needsUpdate = true
   }, [group])
+
+  // Vaivén con el viento global: las flores se inclinan hacia donde sopla, con
+  // una onda que viaja por el campo (igual criterio que el pasto). Pivotan desde
+  // su base (el origen de cada instancia está en el suelo). `it.rot` hace de fase.
+  useFrame((state) => {
+    const m = ref.current
+    if (!m) return
+    const t = state.clock.elapsedTime
+    const w = sampleWind(t)
+    const lean = 0.05 + 0.1 * w.strength
+    for (let i = 0; i < group.length; i++) {
+      const it = group[i]
+      const proj = it.position[0] * w.dirX + it.position[2] * w.dirZ
+      const wave = Math.sin(t * 1.9 - proj * 0.4 + it.rot) * 0.045 * (0.5 + w.strength)
+      const k = lean + wave
+      _o.position.set(it.position[0], GROUND_Y, it.position[2])
+      _o.rotation.set(-w.dirZ * k, it.rot, w.dirX * k)
+      _o.scale.setScalar(it.scale)
+      _o.updateMatrix()
+      m.setMatrixAt(i, _o.matrix)
+    }
+    m.instanceMatrix.needsUpdate = true
+  })
 
   return (
     <instancedMesh
