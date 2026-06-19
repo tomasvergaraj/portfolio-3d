@@ -11,6 +11,10 @@ import { playerPos, playerMotion } from './playerState'
 
 const SPEED = 6.4
 const SPRINT_MULT = 1.85 // velocidad al correr (Shift / joystick a fondo)
+// Salto: velocidad inicial y gravedad. Tiempo en el aire = 2·V/|G| ≈ 0.8 s,
+// altura máxima = V²/(2·|G|) ≈ 1.3. El avatar solo salta desde el suelo.
+const JUMP_V = 6.4
+const GRAVITY = -16
 const CLAMP_R = 20.5
 const INTERACT_R = 3.6
 const CAM_OFFSET = new THREE.Vector3(0, 12.5, 16.5)
@@ -188,6 +192,8 @@ export function Player() {
   const lastNearby = useRef(null)
   const walk = useRef(0)
   const dogGait = useRef(0)
+  // Estado del salto: y (altura sobre el suelo), vy (velocidad vertical), active.
+  const jump = useRef({ y: 0, vy: 0, active: false })
   const intro = useRef({ started: false, t: 0 })
   const idle = useRef({ t: 0, orbiting: false, a: 0 })
   // Punto al que mira la cámara, interpolado para transiciones suaves.
@@ -204,8 +210,8 @@ export function Player() {
     const ready = useStore.getState().ready
     // Congelar el control durante la carga y la intro de cámara.
     const frozen = active !== null || !ready
-    const { x, z, moving, sprint } = frozen
-      ? { x: 0, z: 0, moving: false, sprint: false }
+    const { x, z, moving, sprint, jump: jumpHeld } = frozen
+      ? { x: 0, z: 0, moving: false, sprint: false, jump: false }
       : readInput()
 
     const speed = SPEED * (sprint && moving ? SPRINT_MULT : 1)
@@ -222,17 +228,41 @@ export function Player() {
       g.position.x *= CLAMP_R / r
       g.position.z *= CLAMP_R / r
     }
+    // Salto: se dispara desde el suelo al pulsar espacio; luego sigue una
+    // parábola por gravedad hasta volver a tocar el suelo.
+    const j = jump.current
+    if (jumpHeld && !j.active) {
+      j.active = true
+      j.vy = JUMP_V
+      playerMotion.jumpId++
+    }
+    if (j.active) {
+      j.vy += GRAVITY * d
+      j.y += j.vy * d
+      if (j.y <= 0) {
+        j.y = 0
+        j.vy = 0
+        j.active = false
+      }
+    }
+
     // Comparte la posición y el movimiento para otros sistemas (pasto, polvo…)
     playerPos.copy(g.position)
     playerMotion.moving = moving
     playerMotion.sprint = sprint && moving
+    playerMotion.jumping = j.active
 
     // Balanceo al caminar (más rápido y marcado al correr). Con el avatar
     // animado lo da su propio clip de caminar; no añadimos el rebote procedural.
+    // La altura del salto se aplica siempre (afecta al cuerpo, no a la cámara).
     walk.current += moving ? d * (sprint ? 16 : 10) : 0
-    if (bodyRef.current && !USE_AVATAR_MODEL) {
-      const amp = sprint ? 0.17 : 0.12
-      bodyRef.current.position.y = moving ? Math.abs(Math.sin(walk.current)) * amp : 0
+    if (bodyRef.current) {
+      let y = j.y
+      if (!USE_AVATAR_MODEL) {
+        const amp = sprint ? 0.17 : 0.12
+        y += moving ? Math.abs(Math.sin(walk.current)) * amp : 0
+      }
+      bodyRef.current.position.y = y
     }
 
     // Estela para el perro

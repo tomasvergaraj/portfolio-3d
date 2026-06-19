@@ -5,7 +5,7 @@ export const keys = new Set()
 
 // Vector del joystick, normalizado en el rango [-1, 1]. `boost` lo activa el
 // joystick al empujarlo a fondo (equivalente táctil del Shift).
-export const touch = { x: 0, z: 0, boost: false }
+export const touch = { x: 0, z: 0, boost: false, jump: false }
 
 // Devuelve la dirección deseada combinando teclado + joystick.
 // Ejes: x = izquierda/derecha, z = adelante(-)/atrás(+).
@@ -24,5 +24,7 @@ export function readInput() {
     z /= len
   }
   const sprint = keys.has('shift') || touch.boost
-  return { x, z, moving: len > 0.06, sprint }
+  // Salto: barra espaciadora (teclado) o botón táctil.
+  const jump = keys.has(' ') || touch.jump
+  return { x, z, moving: len > 0.06, sprint, jump }
 }

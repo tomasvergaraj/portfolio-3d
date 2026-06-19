@@ -13,12 +13,18 @@ import { writeFile, mkdir } from 'node:fs/promises'
 
 const BASE = process.argv[2] || 'http://localhost:5173'
 const PAGE = `${BASE}/convert.html`
+// Filtro opcional: procesa solo los jobs cuyo src contiene esta subcadena. Útil
+// para reconvertir un único clip sin tener los demás FBX en public/.
+//   node scripts/fbx-to-glb.mjs http://localhost:5173 Jumping
+const FILTER = process.argv[3] || ''
 
-const JOBS = [
+const ALL_JOBS = [
   { src: '/character_inactive.fbx', out: 'tmp/avatar.raw.glb', stripMesh: false },
   { src: '/character_walk_in_place.fbx', out: 'tmp/avatar_walk.raw.glb', stripMesh: true },
   { src: '/character_running.fbx', out: 'tmp/avatar_run.raw.glb', stripMesh: true },
+  { src: '/Jumping.fbx', out: 'tmp/avatar_jump.raw.glb', stripMesh: true },
 ]
+const JOBS = FILTER ? ALL_JOBS.filter((j) => j.src.toLowerCase().includes(FILTER.toLowerCase())) : ALL_JOBS
 
 async function main() {
   await mkdir('tmp', { recursive: true })

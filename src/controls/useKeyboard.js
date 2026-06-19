@@ -23,6 +23,13 @@ export function useKeyboard() {
         return
       }
 
+      // Salto (barra espaciadora). preventDefault evita el scroll de la página.
+      if (k === ' ') {
+        e.preventDefault()
+        keys.add(' ')
+        return
+      }
+
       // Movimiento + sprint (Shift). Se ignoran mientras el panel está abierto.
       if (
         ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift'].includes(k)
