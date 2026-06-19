@@ -71,6 +71,11 @@ function Cloud3({ position, scale = 1 }) {
   )
 }
 
+// Punto donde aparece el personaje al entrar (ver Player.jsx). Mantenemos esta
+// zona despejada para que ningún árbol tape al avatar en la intro.
+const SPAWN = [0, 6]
+const SPAWN_CLEAR = 6
+
 export function Scenery() {
   const { trees, rocks, grass } = useMemo(() => {
     const rnd = mulberry32(20240617)
@@ -87,24 +92,34 @@ export function Scenery() {
       return true
     }
 
-    let guard = 0
-    while (trees.length < 9 && guard < 400) {
-      guard++
-      const a = rnd() * Math.PI * 2
-      const r = 5 + rnd() * 16
-      const x = Math.cos(a) * r
-      const z = Math.sin(a) * r
-      if (!farFromStations(x, z)) continue
-      if (Math.hypot(x, z) < 4.5) continue
-      trees.push({
-        position: [x, 0, z],
-        scale: 0.8 + rnd() * 0.5,
-        rot: rnd() * Math.PI * 2,
-        url: TREE_URLS[rnd() < 0.5 ? 0 : 1],
-      })
+    const farFromSpawn = (x, z) => Math.hypot(x - SPAWN[0], z - SPAWN[1]) > SPAWN_CLEAR
+
+    // Distribución estratificada: un árbol por sector angular para que queden
+    // repartidos por todo el anillo en vez de amontonarse en una zona.
+    const TREE_COUNT = 10
+    const sector = (Math.PI * 2) / TREE_COUNT
+    const baseRot = rnd() * Math.PI * 2
+    for (let i = 0; i < TREE_COUNT; i++) {
+      let placed = false
+      for (let attempt = 0; attempt < 24 && !placed; attempt++) {
+        const a = baseRot + sector * (i + 0.15 + rnd() * 0.7)
+        const r = 8 + rnd() * 11
+        const x = Math.cos(a) * r
+        const z = Math.sin(a) * r
+        if (!farFromStations(x, z)) continue
+        if (!farFromSpawn(x, z)) continue
+        if (Math.hypot(x, z) < 6) continue
+        trees.push({
+          position: [x, 0, z],
+          scale: 0.8 + rnd() * 0.5,
+          rot: rnd() * Math.PI * 2,
+          url: TREE_URLS[rnd() < 0.5 ? 0 : 1],
+        })
+        placed = true
+      }
     }
 
-    guard = 0
+    let guard = 0
     while (rocks.length < 9 && guard < 200) {
       guard++
       const a = rnd() * Math.PI * 2
