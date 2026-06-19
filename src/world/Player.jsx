@@ -11,10 +11,12 @@ import { playerPos, playerMotion } from './playerState'
 
 const SPEED = 6.4
 const SPRINT_MULT = 1.85 // velocidad al correr (Shift / joystick a fondo)
-// Salto: velocidad inicial y gravedad. Tiempo en el aire = 2·V/|G| ≈ 0.8 s,
-// altura máxima = V²/(2·|G|) ≈ 1.3. El avatar solo salta desde el suelo.
-const JUMP_V = 6.4
-const GRAVITY = -16
+// Salto: velocidad inicial y gravedad ajustadas para que el tiempo en el aire
+// (2·V/|G| ≈ 0.42 s) coincida con el tramo de vuelo del clip de salto, así la
+// animación y el movimiento van sincronizados. Altura máxima V²/(2·|G|) ≈ 0.8.
+// El avatar solo salta desde el suelo.
+const JUMP_V = 7.6
+const GRAVITY = -36
 const CLAMP_R = 20.5
 const INTERACT_R = 3.6
 const CAM_OFFSET = new THREE.Vector3(0, 12.5, 16.5)

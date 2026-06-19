@@ -42,10 +42,15 @@ const SPRINT_SPEED = 6.4 * 1.85
 // acelerarlos para que no patinen. Multiplicadores del timeScale.
 const WALK_ANIM_MULT = 1.6
 const RUN_ANIM_MULT = 1.1
-// El clip de salto dura ~1.53 s; lo aceleramos un poco para que el despegue
-// acompañe a la parábola física (≈0.8 s en el aire) y la recepción caiga en el
-// suelo.
-const JUMP_ANIM_MULT = 1.5
+// El clip de salto de Mixamo (1.53 s) dedica el inicio a quedarse quieto y a una
+// agachada de anticipación; el despegue real ocurre en ~0.50 s, el pico en 0.70
+// y los pies vuelven al suelo en ~0.86. Para que el salto sea responsivo y vaya
+// sincronizado con la física, arrancamos el clip justo antes del despegue y lo
+// dejamos correr hasta el final de la recepción; la física se ajusta para durar
+// lo mismo en el aire (ver JUMP_V/GRAVITY en Player).
+const JUMP_ANIM_MULT = 1.0
+const JUMP_CLIP_START = 0.44 // s: salta la espera + casi toda la agachada
+const JUMP_CLIP_END = 1.02 // s: fin de la recepción; soltamos el peso aquí
 
 function tuneMaterials(model) {
   model.traverse((o) => {
@@ -143,13 +148,18 @@ function GlbAvatar() {
 
     if (!walk) return
 
-    // Salto: cuando el Player anuncia un nuevo jumpId, reproducimos el clip una
-    // vez desde el principio. jumpAnim sigue activo hasta que el clip termina.
+    // Salto: cuando el Player anuncia un nuevo jumpId, reproducimos el clip desde
+    // justo antes del despegue (responsivo y en sync con la física). jumpAnim
+    // sigue activo hasta el final de la recepción, donde soltamos su peso para
+    // volver a idle/walk/run sin quedarnos "pegados" en la pose de salto.
     if (jump && playerMotion.jumpId !== lastJumpId.current) {
       lastJumpId.current = playerMotion.jumpId
       jumpAnim.current = true
-      jump.reset().setEffectiveTimeScale(JUMP_ANIM_MULT).setEffectiveWeight(1).play()
+      jump.reset().play()
+      jump.time = JUMP_CLIP_START
+      jump.setEffectiveTimeScale(JUMP_ANIM_MULT).setEffectiveWeight(1)
     }
+    if (jumpAnim.current && jump && jump.time >= JUMP_CLIP_END) jumpAnim.current = false
     const jumping = jumpAnim.current
 
     // Clasifica el estado: la velocidad (delta de posición) detecta movimiento
