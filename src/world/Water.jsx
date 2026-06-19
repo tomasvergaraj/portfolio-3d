@@ -40,9 +40,16 @@ export function Water({ animate = true }) {
     return g
   }, [])
   const base = useMemo(() => geo.attributes.position.array.slice(), [geo])
+  // Fase del oleaje integrada a mano. La velocidad sube con la racha; si se
+  // multiplicara por el tiempo absoluto (sin(... - t*speed)), la frecuencia
+  // instantánea sería speed + t·speed' y el oleaje se aceleraría sin freno a
+  // medida que pasa el tiempo. Acumulando speed·dt por frame la frecuencia
+  // queda estable.
+  const phase = useRef(0)
 
-  useFrame((state) => {
+  useFrame((state, dt) => {
     if (!animate || !ref.current) return
+    const d = Math.min(dt, 0.05)
     const t = state.clock.elapsedTime
     const w = sampleWind(t)
     // El oleaje principal viaja en la dirección del viento; su amplitud y su
@@ -50,8 +57,13 @@ export function Water({ animate = true }) {
     // viento) y un rizo fino rompen el patrón para que no se vea como bandas.
     const px = w.dirX
     const pz = w.dirZ
-    const amp = 0.42 + w.strength * 0.55
+    // Amplitud acotada: la suma de las 3 ondas llega como mucho a ~0.88, así que
+    // con la base en y=-0.4 la cresta queda en ~0.48, por debajo de la tapa de la
+    // isla (y≈0.7). El agua ya no sobrepasa el piso.
+    const amp = 0.26 + w.strength * 0.3
     const speed = 0.7 + w.strength * 0.9
+    phase.current += speed * d
+    const ph = phase.current
     const pos = ref.current.geometry.attributes.position
     for (let i = 0; i < pos.count; i++) {
       const x = base[i * 3]
@@ -59,9 +71,9 @@ export function Water({ animate = true }) {
       const along = x * px + y * pz // distancia proyectada en la dirección del viento
       const across = -x * pz + y * px // eje perpendicular
       const wave =
-        Math.sin(along * 0.09 - t * speed) * amp +
-        Math.sin(across * 0.13 - t * speed * 0.55) * amp * 0.4 +
-        Math.sin(along * 0.27 - t * speed * 1.7) * amp * 0.18 // rizo fino
+        Math.sin(along * 0.09 - ph) * amp +
+        Math.sin(across * 0.13 - ph * 0.55) * amp * 0.4 +
+        Math.sin(along * 0.27 - ph * 1.7) * amp * 0.18 // rizo fino
       pos.setZ(i, wave)
     }
     pos.needsUpdate = true
