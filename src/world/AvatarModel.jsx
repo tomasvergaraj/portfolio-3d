@@ -43,15 +43,14 @@ const SPRINT_SPEED = 6.4 * 1.85
 const WALK_ANIM_MULT = 1.6
 const RUN_ANIM_MULT = 1.1
 const JUMP_ANIM_MULT = 1.0
-// El salto lo MANEJA la animación: su root motion (caderas) sube y baja al avatar
-// y flexiona las piernas como fue diseñado (los pies se quedan apoyados en el
-// aterrizaje, sin hundirse). Solo recortamos la espera inicial y la cola de reposo
-// para que sea ágil, y amplificamos el tramo de SUBIDA del root motion para que el
-// salto tenga más altura (el aterrizaje queda intacto → no se hunde).
-const JUMP_CLIP_START = 0.2 // s: recorta la espera quieta, deja la anticipación
-const JUMP_CLIP_END = 1.1 // s: hasta terminar la recepción; corta la cola de reposo
+// La ALTURA del salto la da la física (el root motion del clip NO mueve a este rig;
+// solo se aplican sus rotaciones). Del clip nos quedamos con el impulso + la
+// recogida en el aire [0.44, 0.74] y DESCARTAMOS el aterrizaje/amortiguación: ahí
+// la pierna se estira hacia el suelo y, como las caderas no bajan, el pie se hundía.
+// El asentado al caer lo hacen idle/walk, con los pies bien apoyados.
+const JUMP_CLIP_START = 0.44 // s: impulso de despegue
+const JUMP_CLIP_END = 0.74 // s: recogida en el aire, antes de estirar para aterrizar
 const JUMP_CLIP_FPS = 30 // Mixamo
-const JUMP_LEAP_GAIN = 3.4 // amplifica la altura del salto (solo subida)
 
 function tuneMaterials(model) {
   model.traverse((o) => {
@@ -71,22 +70,6 @@ function tuneMaterials(model) {
 }
 
 const _wp = new THREE.Vector3()
-
-// Amplifica SOLO el tramo de subida del root motion (caderas) de un clip: aleja de
-// la altura de pie las posiciones que están por ENCIMA de ella, dejando intactas
-// las de la bajada/aterrizaje. Así el salto gana altura sin tocar la recepción, que
-// mantiene los pies apoyados (la flexión de piernas la da el propio clip).
-function amplifyLeap(clip, gain) {
-  for (const track of clip.tracks) {
-    if (!track.name.endsWith('.position')) continue
-    const v = track.values // [x,y,z, x,y,z, …]
-    const stand = v[1] // Y de pie (primer fotograma)
-    for (let i = 1; i < v.length; i += 3) {
-      const d = v[i] - stand
-      if (d > 0) v[i] = stand + d * gain
-    }
-  }
-}
 
 function GlbAvatar() {
   const ref = useRef()
@@ -110,25 +93,23 @@ function GlbAvatar() {
     if (run) { run.name = 'run'; out.push(run) }
     const jumpSrc = jumpGlb?.animations?.[0]
     if (jumpSrc) {
-      // Recorta la espera inicial y la cola de reposo (subclip usa nº de fotograma
-      // = tiempo·fps), conservando anticipación→salto→aire→aterrizaje con flexión.
+      // Recorta a [impulso, recogida en el aire] (subclip usa nº de fotograma =
+      // tiempo·fps): solo la pose de salto, sin el aterrizaje que hundía el pie.
       const jump = THREE.AnimationUtils.subclip(
         jumpSrc, 'jump',
         Math.round(JUMP_CLIP_START * JUMP_CLIP_FPS),
         Math.round(JUMP_CLIP_END * JUMP_CLIP_FPS),
         JUMP_CLIP_FPS
       )
-      amplifyLeap(jump, JUMP_LEAP_GAIN) // más altura, sin tocar la recepción
       out.push(jump)
     }
     return out
   }, [gltf, walkGlb, runGlb, jumpGlb])
 
-  const { actions, mixer } = useAnimations(clips, ref)
+  const { actions } = useAnimations(clips, ref)
   const last = useRef(new THREE.Vector3())
   const inited = useRef(false)
   const lastJumpId = useRef(0) // último salto disparado
-  const jumpActive = useRef(false) // clip de salto en curso (hasta que termina)
 
   useLayoutEffect(() => tuneMaterials(scene), [scene])
 
@@ -142,21 +123,15 @@ function GlbAvatar() {
     const jump = actions.jump
     if (jump) {
       jump.setLoop(THREE.LoopOnce, 1)
-      jump.clampWhenFinished = true
+      jump.clampWhenFinished = true // mantiene la recogida en el aire hasta aterrizar
       jump.setEffectiveTimeScale(JUMP_ANIM_MULT)
       jump.setEffectiveWeight(0)
     }
-    // El salto es one-shot: al terminar el clip soltamos su peso (vuelve idle/walk).
-    const onFinished = (e) => {
-      if (e.action === actions.jump) jumpActive.current = false
-    }
-    mixer?.addEventListener('finished', onFinished)
     return () => {
       for (const name of ['idle', 'walk', 'run']) actions[name]?.stop()
       actions.jump?.stop()
-      mixer?.removeEventListener('finished', onFinished)
     }
-  }, [actions, mixer])
+  }, [actions])
 
   useFrame((_, dt) => {
     const { idle, walk, run, jump } = actions
@@ -176,15 +151,14 @@ function GlbAvatar() {
 
     if (!walk) return
 
-    // Salto: cuando el Player anuncia un nuevo jumpId, reproducimos el clip una vez.
-    // La animación maneja todo (sube/baja al avatar y flexiona las piernas); sigue
-    // activa hasta que termina (evento 'finished').
+    // Salto: cuando el Player anuncia un nuevo jumpId, reproducimos la pose de salto
+    // una vez. El peso sigue al estado "en el aire" de la física: al aterrizar lo
+    // soltamos y entran idle/walk (que asientan los pies en el suelo).
     if (jump && playerMotion.jumpId !== lastJumpId.current) {
       lastJumpId.current = playerMotion.jumpId
-      jumpActive.current = true
       jump.reset().setEffectiveTimeScale(JUMP_ANIM_MULT).setEffectiveWeight(1).play()
     }
-    const jumping = jumpActive.current
+    const jumping = playerMotion.jumping
 
     // Clasifica el estado: la velocidad (delta de posición) detecta movimiento
     // de forma robusta al framerate y al congelado (con panel abierto no se
