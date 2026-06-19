@@ -84,15 +84,32 @@ export function Scenery() {
     const rocks = []
     const grass = []
 
-    const farFromStations = (x, z) => {
+    const farFromStations = (x, z, min = 4.2) => {
       for (const a of stationAngles) {
         const [sx, , sz] = stationPosition(a)
-        if (Math.hypot(x - sx, z - sz) < 4.2) return false
+        if (Math.hypot(x - sx, z - sz) < min) return false
       }
       return true
     }
 
     const farFromSpawn = (x, z) => Math.hypot(x - SPAWN[0], z - SPAWN[1]) > SPAWN_CLEAR
+
+    // Caminos de roca: van del centro a cada estación. Un punto está "sobre el
+    // camino" si su distancia perpendicular a alguna línea radial es menor que el
+    // medio-ancho (+ margen) y cae dentro del largo del camino. Lo usamos para no
+    // colocar vegetación ni rocas encima de los caminos enlosados.
+    const onPath = (x, z) => {
+      for (const a of stationAngles) {
+        const [sx, , sz] = stationPosition(a)
+        const len = Math.hypot(sx, sz) || 1
+        const dx = sx / len
+        const dz = sz / len
+        const along = x * dx + z * dz
+        const perp = Math.abs(x * dz - z * dx)
+        if (along > -1 && along < len + 1.4 && perp < 1.7) return true
+      }
+      return false
+    }
 
     // Distribución estratificada: un árbol por sector angular para que queden
     // repartidos por todo el anillo en vez de amontonarse en una zona.
@@ -108,6 +125,7 @@ export function Scenery() {
         const z = Math.sin(a) * r
         if (!farFromStations(x, z)) continue
         if (!farFromSpawn(x, z)) continue
+        if (onPath(x, z)) continue
         if (Math.hypot(x, z) < 6) continue
         trees.push({
           position: [x, 0, z],
@@ -119,25 +137,43 @@ export function Scenery() {
       }
     }
 
-    let guard = 0
-    while (rocks.length < 9 && guard < 200) {
-      guard++
-      const a = rnd() * Math.PI * 2
-      const r = 6 + rnd() * 15
-      const x = Math.cos(a) * r
-      const z = Math.sin(a) * r
-      rocks.push({ position: [x, 0, z], scale: 0.6 + rnd() * 0.9, rot: rnd() * Math.PI * 2 })
+    // Rocas: repartidas por sectores y fuera de caminos / estaciones / centro.
+    const ROCK_COUNT = 11
+    const rsector = (Math.PI * 2) / ROCK_COUNT
+    const rbase = rnd() * Math.PI * 2
+    for (let i = 0; i < ROCK_COUNT; i++) {
+      for (let attempt = 0; attempt < 24; attempt++) {
+        const a = rbase + rsector * (i + 0.1 + rnd() * 0.8)
+        const r = 6 + rnd() * 13
+        const x = Math.cos(a) * r
+        const z = Math.sin(a) * r
+        if (onPath(x, z)) continue
+        if (!farFromStations(x, z, 3.6)) continue
+        if (Math.hypot(x, z) < 5) continue
+        rocks.push({ position: [x, 0, z], scale: 0.6 + rnd() * 0.9, rot: rnd() * Math.PI * 2 })
+        break
+      }
     }
 
-    // Matas de pasto dispersas por la zona verde (no en el centro ni la orilla).
-    guard = 0
-    while (grass.length < 36 && guard < 800) {
+    // Matas de pasto dispersas por la zona verde, sin pisar caminos, el centro ni
+    // las estaciones. Dos variantes (Grass.glb y grass2.obj) para dar variedad.
+    let guard = 0
+    while (grass.length < 64 && guard < 2000) {
       guard++
       const a = rnd() * Math.PI * 2
-      const r = 4.5 + rnd() * 16.5
+      const r = 4.5 + rnd() * 16
       const x = Math.cos(a) * r
       const z = Math.sin(a) * r
-      grass.push({ position: [x, 0, z], scale: 0.7 + rnd() * 0.7, rot: rnd() * Math.PI * 2, phase: rnd() * Math.PI * 2 })
+      if (onPath(x, z)) continue
+      if (Math.hypot(x, z) < 4) continue
+      if (!farFromStations(x, z, 2.6)) continue
+      grass.push({
+        position: [x, 0, z],
+        scale: 0.7 + rnd() * 0.7,
+        rot: rnd() * Math.PI * 2,
+        phase: rnd() * Math.PI * 2,
+        variant: rnd() < 0.5 ? 1 : 0,
+      })
     }
 
     return { trees, rocks, grass }
