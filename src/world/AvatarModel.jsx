@@ -50,7 +50,9 @@ const JUMP_ANIM_MULT = 1.0
 // juntos y en el aterrizaje el pie queda apoyado (sin hundirse). Amplificamos solo
 // la subida; la bajada va a 1×.
 const JUMP_CLIP_START = 0.44 // s: impulso de despegue (sin la espera/agachada previa)
-const JUMP_CLIP_END = 0.95 // s: incluye el aterrizaje con flexión, sin la cola de reposo
+const JUMP_CLIP_END = 0.87 // s: hasta el contacto con el suelo; cortamos la amortiguación
+//                            profunda (0.87→0.93) donde las caderas bajan y se notaba
+//                            el hundimiento. El asentado lo termina idle/walk.
 const JUMP_CLIP_FPS = 30 // Mixamo
 const JUMP_LEAP_GAIN = 5 // amplifica la altura de la subida (la bajada queda a 1×)
 
