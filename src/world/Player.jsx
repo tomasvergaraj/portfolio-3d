@@ -11,6 +11,9 @@ import { playerPos, playerMotion } from './playerState'
 
 const SPEED = 6.4
 const SPRINT_MULT = 1.85 // velocidad al correr (Shift / joystick a fondo)
+// Salto: instantáneo (se dispara en el acto, sin anticipación). La altura y la pose
+// las maneja el avatar reconstruyendo el root motion del clip (playerMotion.jumpY);
+// aquí solo la aplicamos al cuerpo, así pose y altura van perfectamente alineadas.
 const CLAMP_R = 20.5
 const INTERACT_R = 3.6
 const CAM_OFFSET = new THREE.Vector3(0, 12.5, 16.5)
@@ -224,10 +227,8 @@ export function Player() {
       g.position.x *= CLAMP_R / r
       g.position.z *= CLAMP_R / r
     }
-    // Salto: en el flanco de pulsación de espacio (y solo si no está ya saltando)
-    // anunciamos un nuevo salto. El avatar reproduce el clip completo y reconstruye
-    // su altura a partir del root motion (incluida la flexión de aterrizaje); no
-    // usamos física vertical aquí para no pelear con la animación.
+    // Salto: en el flanco de pulsación de espacio (y si no está ya saltando) avisamos
+    // al avatar con un nuevo jumpId; él reproduce el clip y reconstruye la altura.
     if (jumpHeld && !prevJump.current && !playerMotion.jumping && !frozen) playerMotion.jumpId++
     prevJump.current = jumpHeld
 
@@ -236,13 +237,17 @@ export function Player() {
     playerMotion.moving = moving
     playerMotion.sprint = sprint && moving
 
-    // Balanceo al caminar (más rápido y marcado al correr). Con el avatar animado
-    // lo da su propio clip (y la altura del salto la maneja el avatar); no añadimos
-    // el rebote procedural salvo con el avatar de primitivas.
+    // Balanceo al caminar (más rápido y marcado al correr) + altura del salto. Con
+    // el avatar real el balanceo lo da su clip; la altura del salto la reconstruye el
+    // avatar (playerMotion.jumpY) y aquí la aplicamos al cuerpo.
     walk.current += moving ? d * (sprint ? 16 : 10) : 0
-    if (bodyRef.current && !USE_AVATAR_MODEL) {
-      const amp = sprint ? 0.17 : 0.12
-      bodyRef.current.position.y = moving ? Math.abs(Math.sin(walk.current)) * amp : 0
+    if (bodyRef.current) {
+      let y = playerMotion.jumpY
+      if (!USE_AVATAR_MODEL) {
+        const amp = sprint ? 0.17 : 0.12
+        y += moving ? Math.abs(Math.sin(walk.current)) * amp : 0
+      }
+      bodyRef.current.position.y = y
     }
 
     // Estela para el perro

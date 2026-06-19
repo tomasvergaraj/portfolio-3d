@@ -43,16 +43,14 @@ const SPRINT_SPEED = 6.4 * 1.85
 const WALK_ANIM_MULT = 1.6
 const RUN_ANIM_MULT = 1.1
 const JUMP_ANIM_MULT = 1.0
-// Salto completo (impulso → aire → aterrizaje con flexión). Este rig NO aplica el
-// root motion (traslación de caderas) del clip, solo sus rotaciones; por eso, si
-// dejábamos que el clip moviera al avatar, "no saltaba" y en el aterrizaje la
-// pierna se estiraba hacia el suelo y el pie se hundía. Solución: reconstruimos el
-// root motion a mano —muestreamos la Y de la cadera del clip y la aplicamos a la
-// posición del avatar— así cuerpo y piernas bajan juntos en la recepción y los pies
-// quedan apoyados. Amplificamos SOLO la subida (la bajada va a escala real para no
-// hundir).
-const JUMP_CLIP_START = 0.3 // s: arranca al final de la espera, con algo de anticipación
-const JUMP_CLIP_END = 1.0 // s: incluye el aterrizaje con flexión y la recuperación
+// Salto instantáneo (arranca en el impulso, sin anticipación) y manejado por la
+// animación. Como este rig NO aplica el root motion (traslación de caderas) del
+// clip, lo reconstruimos a mano: muestreamos la Y de la cadera y la aplicamos al
+// cuerpo (vía playerMotion.jumpY, en el Player). Así cuerpo y piernas suben/bajan
+// juntos y en el aterrizaje el pie queda apoyado (sin hundirse). Amplificamos solo
+// la subida; la bajada va a 1×.
+const JUMP_CLIP_START = 0.44 // s: impulso de despegue (sin la espera/agachada previa)
+const JUMP_CLIP_END = 0.95 // s: incluye el aterrizaje con flexión, sin la cola de reposo
 const JUMP_CLIP_FPS = 30 // Mixamo
 const JUMP_LEAP_GAIN = 5 // amplifica la altura de la subida (la bajada queda a 1×)
 
@@ -63,7 +61,7 @@ function firstHipsY(clip) {
   }
   return 0
 }
-// Extrae la curva Y de la cadera (tiempos + valores) de la pista de posición.
+// Curva Y de la cadera (tiempos + valores) de la pista de posición.
 function extractHipsY(clip) {
   for (const track of clip.tracks) {
     if (!track.name.endsWith('.position')) continue
@@ -74,7 +72,7 @@ function extractHipsY(clip) {
   }
   return null
 }
-// Interpola la Y de la cadera en el instante t (curva muestreada).
+// Interpola la Y de la cadera en el instante t.
 function sampleHipsY(root, t) {
   const { times, ys } = root
   const n = times.length
@@ -130,8 +128,8 @@ function GlbAvatar() {
     if (run) { run.name = 'run'; out.push(run) }
     const jumpSrc = jumpGlb?.animations?.[0]
     if (jumpSrc) {
-      // Recorta a [impulso, recogida en el aire] (subclip usa nº de fotograma =
-      // tiempo·fps): solo la pose de salto, sin el aterrizaje que hundía el pie.
+      // Recorta a [impulso, aterrizaje con flexión] (subclip usa nº de fotograma =
+      // tiempo·fps), sin la espera/agachada inicial ni la cola de reposo.
       const jump = THREE.AnimationUtils.subclip(
         jumpSrc, 'jump',
         Math.round(JUMP_CLIP_START * JUMP_CLIP_FPS),
@@ -163,7 +161,8 @@ function GlbAvatar() {
   const last = useRef(new THREE.Vector3())
   const inited = useRef(false)
   const lastJumpId = useRef(0) // último salto disparado
-  const jumpActive = useRef(false) // clip de salto en curso (incluye la recepción)
+  const jumpActive = useRef(false) // clip de salto en curso
+  const airborneWas = useRef(false) // estuvo claramente en el aire (para cortar al caer)
 
   useLayoutEffect(() => tuneMaterials(scene), [scene])
 
@@ -205,50 +204,43 @@ function GlbAvatar() {
 
     if (!walk) return
 
-    // Salto: al recibir un nuevo jumpId reproducimos el clip completo una vez
-    // (impulso → aire → aterrizaje con flexión). Queda activo hasta que el clip
-    // termina; el avatar avisa su estado por playerMotion.jumping.
-    if (jump && playerMotion.jumpId !== lastJumpId.current) {
-      lastJumpId.current = playerMotion.jumpId
-      jumpActive.current = true
-      jump.reset().setEffectiveTimeScale(JUMP_ANIM_MULT).setEffectiveWeight(1).play()
-    }
-    if (jumpActive.current && jump && jump.time >= jump.getClip().duration - 1e-3) {
-      jumpActive.current = false
-    }
-    const jumping = jumpActive.current
-    playerMotion.jumping = jumping
-
-    // Altura del salto: reconstruimos el root motion que el rig ignora. Muestreamos
-    // la Y de la cadera del clip en el instante actual y la aplicamos a la posición
-    // del avatar (en unidades de mundo). Amplificamos la subida; la bajada va a 1×
-    // para que en la recepción cuerpo y piernas bajen juntos y el pie quede apoyado.
-    if (jumpRoot) {
-      if (jumping && jump) {
-        // Sincronizado con la pose (sin suavizado) para que los pies queden
-        // apoyados en la recepción.
-        const dy = (sampleHipsY(jumpRoot, jump.time) - jumpRoot.stand) * SCALE
-        g.position.y = dy > 0 ? dy * JUMP_LEAP_GAIN : dy
-      } else if (g.position.y !== 0) {
-        // En reposo, vuelve suavemente a 0 (por si quedó un resto al soltar).
-        g.position.y += (0 - g.position.y) * (1 - Math.pow(0.001, dt))
-        if (Math.abs(g.position.y) < 1e-4) g.position.y = 0
-      }
-    }
-
-    // Clasifica el estado: la velocidad (delta de posición) detecta movimiento
-    // de forma robusta al framerate y al congelado (con panel abierto no se
-    // mueve → reposo). El sprint viene del input (Shift / joystick a fondo).
     const moving = speed > 0.12
     const sprint = readInput().sprint
     const running = moving && sprint && !!run
     const walking = moving && !running
 
-    // Cross-fade de los pesos hacia su objetivo (suavizado estable a dt). El
-    // salto tiene prioridad mientras está activo; al terminar entran idle/walk/run.
+    // Salto: al recibir un nuevo jumpId reproducimos el clip una vez. Queda activo
+    // hasta que termina; pero si el avatar ya tocó el suelo (tras estar en el aire)
+    // y se está moviendo, lo cortamos para que camine/corra al instante y no patine.
+    if (jump && playerMotion.jumpId !== lastJumpId.current) {
+      lastJumpId.current = playerMotion.jumpId
+      jumpActive.current = true
+      airborneWas.current = false
+      jump.reset().setEffectiveTimeScale(JUMP_ANIM_MULT).setEffectiveWeight(1).play()
+    }
+
+    // Altura del salto reconstruida del root motion (que el rig no aplica). La
+    // publicamos para que el Player la aplique al cuerpo; amplificamos la subida,
+    // la bajada va a 1× para que en la recepción el pie quede apoyado.
+    let dy = 0
+    if (jumpRoot && jumpActive.current && jump) {
+      const raw = (sampleHipsY(jumpRoot, jump.time) - jumpRoot.stand) * SCALE
+      dy = raw > 0 ? raw * JUMP_LEAP_GAIN : raw
+      if (dy > 0.04) airborneWas.current = true
+      const dur = jump.getClip().duration
+      const landed = airborneWas.current && dy <= 0.02
+      if (jump.time >= dur - 1e-3 || (landed && moving)) jumpActive.current = false
+    }
+    const jumping = jumpActive.current
+    playerMotion.jumping = jumping
+    playerMotion.jumpY = jumping ? dy : 0
+
+    // Cross-fade de los pesos hacia su objetivo (suavizado estable a dt). El salto
+    // tiene prioridad mientras está activo; al soltarlo entran idle/walk/run rápido.
     const k = 1 - Math.pow(0.0001, dt)
-    const lerpW = (a, target) => a && a.setEffectiveWeight(THREE.MathUtils.lerp(a.getEffectiveWeight(), target, k))
-    lerpW(jump, jumping ? 1 : 0)
+    const kJump = 1 - Math.pow(0.0001, dt * 4)
+    const lerpW = (a, target, kk = k) => a && a.setEffectiveWeight(THREE.MathUtils.lerp(a.getEffectiveWeight(), target, kk))
+    lerpW(jump, jumping ? 1 : 0, jumping ? 1 : kJump)
     lerpW(idle, !moving && !jumping ? 1 : 0)
     lerpW(walk, walking && !jumping ? 1 : 0)
     lerpW(run, running && !jumping ? 1 : 0)
