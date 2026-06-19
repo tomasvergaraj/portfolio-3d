@@ -50,7 +50,6 @@ const RUN_ANIM_MULT = 1.1
 // lo mismo en el aire (ver JUMP_V/GRAVITY en Player).
 const JUMP_ANIM_MULT = 1.0
 const JUMP_CLIP_START = 0.44 // s: salta la espera + casi toda la agachada
-const JUMP_CLIP_END = 1.02 // s: fin de la recepción; soltamos el peso aquí
 
 function tuneMaterials(model) {
   model.traverse((o) => {
@@ -96,11 +95,10 @@ function GlbAvatar() {
     return out
   }, [gltf, walkGlb, runGlb, jumpGlb])
 
-  const { actions, mixer } = useAnimations(clips, ref)
+  const { actions } = useAnimations(clips, ref)
   const last = useRef(new THREE.Vector3())
   const inited = useRef(false)
   const lastJumpId = useRef(0) // último salto disparado
-  const jumpAnim = useRef(false) // animación de salto en curso (hasta que termina)
 
   useLayoutEffect(() => tuneMaterials(scene), [scene])
 
@@ -118,17 +116,11 @@ function GlbAvatar() {
       jump.setEffectiveTimeScale(JUMP_ANIM_MULT)
       jump.setEffectiveWeight(0)
     }
-    // Al terminar el clip de salto soltamos su peso para volver a idle/walk/run.
-    const onFinished = (e) => {
-      if (e.action === actions.jump) jumpAnim.current = false
-    }
-    mixer?.addEventListener('finished', onFinished)
     return () => {
       for (const name of ['idle', 'walk', 'run']) actions[name]?.stop()
       actions.jump?.stop()
-      mixer?.removeEventListener('finished', onFinished)
     }
-  }, [actions, mixer])
+  }, [actions])
 
   useFrame((_, dt) => {
     const { idle, walk, run, jump } = actions
@@ -149,18 +141,17 @@ function GlbAvatar() {
     if (!walk) return
 
     // Salto: cuando el Player anuncia un nuevo jumpId, reproducimos el clip desde
-    // justo antes del despegue (responsivo y en sync con la física). jumpAnim
-    // sigue activo hasta el final de la recepción, donde soltamos su peso para
-    // volver a idle/walk/run sin quedarnos "pegados" en la pose de salto.
+    // justo antes del despegue (responsivo y en sync con la física).
     if (jump && playerMotion.jumpId !== lastJumpId.current) {
       lastJumpId.current = playerMotion.jumpId
-      jumpAnim.current = true
       jump.reset().play()
       jump.time = JUMP_CLIP_START
       jump.setEffectiveTimeScale(JUMP_ANIM_MULT).setEffectiveWeight(1)
     }
-    if (jumpAnim.current && jump && jump.time >= JUMP_CLIP_END) jumpAnim.current = false
-    const jumping = jumpAnim.current
+    // El peso del salto sigue al estado "en el aire": en cuanto los pies tocan el
+    // suelo lo soltamos para que walk/run entre de inmediato, sin quedarse
+    // patinando en la pose de recepción.
+    const jumping = playerMotion.jumping
 
     // Clasifica el estado: la velocidad (delta de posición) detecta movimiento
     // de forma robusta al framerate y al congelado (con panel abierto no se
@@ -171,10 +162,12 @@ function GlbAvatar() {
     const walking = moving && !running
 
     // Cross-fade de los pesos hacia su objetivo (suavizado estable a dt). El
-    // salto tiene prioridad: mientras está activo, silencia idle/walk/run.
+    // salto tiene prioridad mientras está en el aire; al aterrizar se suelta
+    // rápido (k mayor) para no arrastrar la pose y que camine/corra al instante.
     const k = 1 - Math.pow(0.0001, dt)
-    const lerpW = (a, target) => a && a.setEffectiveWeight(THREE.MathUtils.lerp(a.getEffectiveWeight(), target, k))
-    lerpW(jump, jumping ? 1 : 0)
+    const kJump = 1 - Math.pow(0.0001, dt * 4)
+    const lerpW = (a, target, kk = k) => a && a.setEffectiveWeight(THREE.MathUtils.lerp(a.getEffectiveWeight(), target, kk))
+    lerpW(jump, jumping ? 1 : 0, jumping ? 1 : kJump)
     lerpW(idle, !moving && !jumping ? 1 : 0)
     lerpW(walk, walking && !jumping ? 1 : 0)
     lerpW(run, running && !jumping ? 1 : 0)
