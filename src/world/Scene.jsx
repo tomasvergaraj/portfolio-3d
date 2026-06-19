@@ -6,6 +6,7 @@ import { Instance } from './props'
 import { ModelBoundary } from './ModelBoundary'
 import { Sky } from './Sky'
 import { Water } from './Water'
+import { FountainSpray } from './FountainSpray'
 import { Scenery } from './Scenery'
 import { Player } from './Player'
 import { StationMarker } from './StationMarker'
@@ -62,12 +63,13 @@ export function Scene({ reducedMotion = false }) {
         </Suspense>
       </ModelBoundary>
 
-      {/* Fuente en el centro de la plaza */}
+      {/* Fuente en el centro de la plaza, con su chorro de agua */}
       <ModelBoundary fallback={null}>
         <Suspense fallback={null}>
           <Instance url="/Fountain.obj" position={[0, 0, 0]} targetH={2.6} />
         </Suspense>
       </ModelBoundary>
+      <FountainSpray position={[0, 0, 0]} reducedMotion={reducedMotion} />
 
       {/* Sin charco de sombra de contacto global: dejaba una "marca" oscura que
           seguía al avatar y al perro por el suelo. El asentado lo dan ahora las
