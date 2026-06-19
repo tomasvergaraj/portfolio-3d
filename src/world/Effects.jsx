@@ -9,16 +9,18 @@ import {
 } from '@react-three/postprocessing'
 
 // Postproceso: SMAA suaviza bordes (el Canvas va sin antialias), el bloom prende
-// sobre lo muy brillante (faros, luciérnagas), un gradeo de color sutil da más
-// contraste y viveza, y la viñeta cierra los bordes con sensación cinematográfica.
+// sobre lo muy brillante (faros, luciérnagas), un gradeo de color con algo más de
+// cuerpo (contraste + saturación) da viveza cinematográfica, y la viñeta cierra
+// los bordes. Color grade afinado para acercarse al contraste rico del folio sin
+// quemar ni saturar de más.
 export function Effects() {
   return (
     <EffectComposer disableNormalPass multisampling={0}>
       <SMAA />
-      <Bloom intensity={0.85} luminanceThreshold={0.7} luminanceSmoothing={0.25} mipmapBlur radius={0.7} />
-      <BrightnessContrast brightness={0.01} contrast={0.1} />
-      <HueSaturation saturation={0.12} hue={0} />
-      <Vignette offset={0.3} darkness={0.6} eskil={false} />
+      <Bloom intensity={0.92} luminanceThreshold={0.68} luminanceSmoothing={0.26} mipmapBlur radius={0.75} />
+      <BrightnessContrast brightness={0.012} contrast={0.135} />
+      <HueSaturation saturation={0.16} hue={0} />
+      <Vignette offset={0.28} darkness={0.66} eskil={false} />
     </EffectComposer>
   )
 }
