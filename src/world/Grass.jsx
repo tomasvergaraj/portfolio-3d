@@ -44,8 +44,21 @@ export function Grass({ items }) {
       flatShading: true,
       side: THREE.DoubleSide,
     })
+    // El OBJ trae su geometría desplazada muy lejos del origen (x≈900, z≈-1700).
+    // Si no la recentramos, la rotación de viento pivotea en un arco enorme y la
+    // mata se ve subiendo/bajando en vez de mecerse. La movemos para que su base
+    // quede sobre el origen (centro en x/z, base en y=0).
+    tuft.updateMatrixWorld(true)
+    _box.setFromObject(tuft)
+    const cx = (_box.min.x + _box.max.x) / 2
+    const cz = (_box.min.z + _box.max.z) / 2
+    const minY = _box.min.y
     tuft.traverse((o) => {
-      if (o.isMesh) o.material = mat
+      if (o.isMesh) {
+        o.material = mat
+        o.geometry = o.geometry.clone()
+        o.geometry.translate(-cx, -minY, -cz)
+      }
     })
     const v1 = { source: tuft, ...measure(tuft, GRASS2_H) }
     return [v0, v1]
