@@ -54,7 +54,7 @@ const JUMP_ANIM_MULT = 1.0
 const JUMP_CLIP_START = 0.3 // s: arranca al final de la espera, con algo de anticipación
 const JUMP_CLIP_END = 1.0 // s: incluye el aterrizaje con flexión y la recuperación
 const JUMP_CLIP_FPS = 30 // Mixamo
-const JUMP_LEAP_GAIN = 3 // amplifica la altura de la subida (la bajada queda a 1×)
+const JUMP_LEAP_GAIN = 5 // amplifica la altura de la subida (la bajada queda a 1×)
 
 // Primer valor Y de la pista de posición de la raíz (caderas) = altura de pie.
 function firstHipsY(clip) {
