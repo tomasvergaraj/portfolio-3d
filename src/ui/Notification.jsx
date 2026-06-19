@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useStore } from '../store'
 import { STATIONS } from '../data/stations'
+import { StationIcon } from '../world/StationIcon'
 
 // Notificación de llegada a una zona (idea de las "zones" del folio de Bruno
 // Simon): al entrar al radio de una estación aparece un toast arriba al centro
@@ -36,7 +37,7 @@ export function Notification() {
             transition={{ duration: 0.32, ease: [0.2, 0.8, 0.2, 1] }}
           >
             <span className="notice-dot" style={{ background: station.color }}>
-              {station.icon}
+              <StationIcon id={station.id} size={18} color="#fff" />
             </span>
             <span className="notice-text">
               <small>Has llegado a</small>
