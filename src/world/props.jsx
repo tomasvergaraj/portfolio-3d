@@ -3,6 +3,7 @@ import { useGLTF, useFBX } from '@react-three/drei'
 import { useFrame, useLoader } from '@react-three/fiber'
 import { OBJLoader } from 'three-stdlib'
 import * as THREE from 'three'
+import { sampleWind } from './wind'
 
 // ─────────────────────────────────────────────────────────────────────────
 // Cargador genérico de props 3D (GLB, FBX u OBJ) con auto-ajuste: como los
@@ -70,12 +71,20 @@ function Placed({ source, position, targetH, scaleMul = 1, rot = 0, groundY = GR
     return { s, baseLift: -_box.min.y }
   }, [model, targetH, scaleMul])
 
-  // Vaivén de viento opcional (p. ej. árboles): mece el modelo desde su base.
+  // Vaivén de viento opcional (p. ej. árboles): mece el modelo desde su base con
+  // el VIENTO global (mismo vector que pasto, hojas, polvo, agua y flores). La
+  // copa se inclina hacia donde sopla (lean) y aletea con la racha (flutter); al
+  // girar lentamente la dirección del viento, los árboles se reorientan con él.
   useFrame((state) => {
     if (!sway || !innerRef.current) return
     const t = state.clock.elapsedTime
-    innerRef.current.rotation.z = euler[2] + Math.sin(t * 0.8 + phase) * sway
-    innerRef.current.rotation.x = euler[0] + Math.cos(t * 0.6 + phase) * sway * 0.7
+    const w = sampleWind(t)
+    const gust = 0.5 + w.strength
+    const lean = sway * (0.7 + w.strength) * 1.2
+    const flutterZ = Math.sin(t * 1.1 + phase) * sway * 0.7 * gust
+    const flutterX = Math.cos(t * 0.7 + phase) * sway * 0.5 * gust
+    innerRef.current.rotation.z = euler[2] + w.dirX * lean + flutterZ
+    innerRef.current.rotation.x = euler[0] - w.dirZ * lean + flutterX
   })
 
   return (
