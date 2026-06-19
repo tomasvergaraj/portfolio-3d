@@ -49,7 +49,13 @@ const RUN_ANIM_MULT = 1.1
 // dejamos correr hasta el final de la recepción; la física se ajusta para durar
 // lo mismo en el aire (ver JUMP_V/GRAVITY en Player).
 const JUMP_ANIM_MULT = 1.0
+// Recortamos el clip a [despegue, contacto]: nos quedamos con la espera→agachada
+// mínima→salto→caída hasta tocar el suelo, y DESCARTAMOS la amortiguación de
+// aterrizaje (0.86→0.93, donde la pierna se flexiona y —con las caderas fijas en
+// vertical— hundiría los pies bajo el suelo). idle/walk hacen el asentado final.
 const JUMP_CLIP_START = 0.44 // s: salta la espera + casi toda la agachada
+const JUMP_CLIP_CONTACT = 0.82 // s: pie en el suelo, justo antes de amortiguar
+const JUMP_CLIP_FPS = 30 // Mixamo
 
 function tuneMaterials(model) {
   model.traverse((o) => {
@@ -103,8 +109,23 @@ function GlbAvatar() {
     if (walk) { walk.name = 'walk'; out.push(walk) }
     const run = runGlb?.animations?.[0]
     if (run) { run.name = 'run'; out.push(run) }
-    const jump = jumpGlb?.animations?.[0]
-    if (jump) { jump.name = 'jump'; pinRootVertical(jump); out.push(jump) }
+    const jumpSrc = jumpGlb?.animations?.[0]
+    if (jumpSrc) {
+      // Fija la vertical de la raíz a la altura de PIE (fotograma 0 del clip
+      // completo) ANTES de recortar; si lo hiciéramos después, el recorte empieza
+      // en la agachada y fijaría las caderas demasiado bajo.
+      pinRootVertical(jumpSrc)
+      // Recorta a [despegue, contacto] (subclip usa nº de fotograma = tiempo·fps):
+      // descarta la amortiguación de aterrizaje. Queda sin hundimiento y "en su
+      // sitio" en altura, que la pone la física.
+      const jump = THREE.AnimationUtils.subclip(
+        jumpSrc, 'jump',
+        Math.round(JUMP_CLIP_START * JUMP_CLIP_FPS),
+        Math.round(JUMP_CLIP_CONTACT * JUMP_CLIP_FPS),
+        JUMP_CLIP_FPS
+      )
+      out.push(jump)
+    }
     return out
   }, [gltf, walkGlb, runGlb, jumpGlb])
 
@@ -157,14 +178,12 @@ function GlbAvatar() {
     // justo antes del despegue (responsivo y en sync con la física).
     if (jump && playerMotion.jumpId !== lastJumpId.current) {
       lastJumpId.current = playerMotion.jumpId
-      jump.reset().play()
-      jump.time = JUMP_CLIP_START
+      jump.reset().play() // el clip ya viene recortado al despegue → empieza en 0
       jump.setEffectiveTimeScale(JUMP_ANIM_MULT).setEffectiveWeight(1)
     }
-    // El peso del salto sigue al estado "en el aire": en cuanto los pies tocan el
-    // suelo lo soltamos para que walk/run entre de inmediato, sin quedarse
-    // patinando en la pose de recepción. La altura la pone la física (clampeada al
-    // suelo) y el clip va "en su sitio" en vertical, así no hay hundimiento.
+    // El peso del salto sigue al estado "en el aire"; al tocar el suelo lo soltamos
+    // y entra idle/walk. El clip recortado no tiene amortiguación y va "en su sitio"
+    // en vertical (la altura la pone la física, clampeada al suelo): no se hunde.
     const jumping = playerMotion.jumping
 
     // Clasifica el estado: la velocidad (delta de posición) detecta movimiento
