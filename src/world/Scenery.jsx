@@ -1,6 +1,8 @@
-import React, { useMemo, Suspense } from 'react'
+import React, { useMemo, useRef, Suspense } from 'react'
 import { Float } from '@react-three/drei'
+import { useFrame } from '@react-three/fiber'
 import { STATIONS, stationPosition } from '../data/stations'
+import { sampleWind } from './wind'
 import { Instance, preloadModel } from './props'
 import { ModelBoundary } from './ModelBoundary'
 import { Grass } from './Grass'
@@ -53,23 +55,42 @@ function ProceduralRock({ position, scale = 1 }) {
   )
 }
 
+const CLOUD_DRIFT_RANGE = 48 // se aleja esto de su origen y reaparece por el otro lado
+
 function Cloud3({ position, scale = 1 }) {
+  const ref = useRef()
+  // Deriva con el viento global (mismo vector que el resto del mundo); al salir
+  // del rango reaparece por el lado opuesto. El bamboleo vertical lo da Float.
+  useFrame((state, dt) => {
+    if (!ref.current) return
+    const w = sampleWind(state.clock.elapsedTime)
+    const d = Math.min(dt, 0.05)
+    const p = ref.current.position
+    p.x += w.dirX * w.strength * 0.7 * d
+    p.z += w.dirZ * w.strength * 0.7 * d
+    if (p.x - position[0] > CLOUD_DRIFT_RANGE) p.x -= CLOUD_DRIFT_RANGE * 2
+    else if (p.x - position[0] < -CLOUD_DRIFT_RANGE) p.x += CLOUD_DRIFT_RANGE * 2
+    if (p.z - position[2] > CLOUD_DRIFT_RANGE) p.z -= CLOUD_DRIFT_RANGE * 2
+    else if (p.z - position[2] < -CLOUD_DRIFT_RANGE) p.z += CLOUD_DRIFT_RANGE * 2
+  })
   return (
-    <Float speed={1.1} rotationIntensity={0} floatIntensity={0.6}>
-      <group position={position} scale={scale}>
-        {[
-          [0, 0, 0, 1.4],
-          [1.3, -0.2, 0.2, 1],
-          [-1.2, -0.1, -0.2, 1.1],
-          [0.5, 0.4, 0.4, 0.9],
-        ].map(([x, y, z, r], i) => (
-          <mesh key={i} position={[x, y, z]}>
-            <sphereGeometry args={[r, 14, 14]} />
-            <meshStandardMaterial color="#ffffff" roughness={1} />
-          </mesh>
-        ))}
-      </group>
-    </Float>
+    <group ref={ref} position={position}>
+      <Float speed={1.1} rotationIntensity={0} floatIntensity={0.6}>
+        <group scale={scale}>
+          {[
+            [0, 0, 0, 1.4],
+            [1.3, -0.2, 0.2, 1],
+            [-1.2, -0.1, -0.2, 1.1],
+            [0.5, 0.4, 0.4, 0.9],
+          ].map(([x, y, z, r], i) => (
+            <mesh key={i} position={[x, y, z]}>
+              <sphereGeometry args={[r, 14, 14]} />
+              <meshStandardMaterial color="#ffffff" roughness={1} />
+            </mesh>
+          ))}
+        </group>
+      </Float>
+    </group>
   )
 }
 
