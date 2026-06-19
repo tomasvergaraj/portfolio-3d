@@ -9,6 +9,7 @@ import { Water } from './Water'
 import { FountainSpray } from './FountainSpray'
 import { Scenery } from './Scenery'
 import { Player } from './Player'
+import { FootTrail } from './FootTrail'
 import { StationMarker } from './StationMarker'
 import { Effects } from './Effects'
 import { Leaves, DayNight, Butterflies, Fireflies, Birds } from './Ambiance'
@@ -83,6 +84,7 @@ export function Scene({ reducedMotion = false }) {
       ))}
 
       <Player reducedMotion={reducedMotion} />
+      <FootTrail reducedMotion={reducedMotion} />
       <Dust />
 
       {/* Motas que flotan en el aire y captan la luz: dan vida y un aire cálido
