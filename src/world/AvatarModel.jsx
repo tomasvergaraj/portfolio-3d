@@ -42,20 +42,16 @@ const SPRINT_SPEED = 6.4 * 1.85
 // acelerarlos para que no patinen. Multiplicadores del timeScale.
 const WALK_ANIM_MULT = 1.6
 const RUN_ANIM_MULT = 1.1
-// El clip de salto de Mixamo (1.53 s) dedica el inicio a quedarse quieto y a una
-// agachada de anticipación; el despegue real ocurre en ~0.50 s, el pico en 0.70
-// y los pies vuelven al suelo en ~0.86. Para que el salto sea responsivo y vaya
-// sincronizado con la física, arrancamos el clip justo antes del despegue y lo
-// dejamos correr hasta el final de la recepción; la física se ajusta para durar
-// lo mismo en el aire (ver JUMP_V/GRAVITY en Player).
 const JUMP_ANIM_MULT = 1.0
-// Recortamos el clip a [despegue, contacto]: nos quedamos con la espera→agachada
-// mínima→salto→caída hasta tocar el suelo, y DESCARTAMOS la amortiguación de
-// aterrizaje (0.86→0.93, donde la pierna se flexiona y —con las caderas fijas en
-// vertical— hundiría los pies bajo el suelo). idle/walk hacen el asentado final.
-const JUMP_CLIP_START = 0.44 // s: salta la espera + casi toda la agachada
-const JUMP_CLIP_CONTACT = 0.82 // s: pie en el suelo, justo antes de amortiguar
+// El salto lo MANEJA la animación: su root motion (caderas) sube y baja al avatar
+// y flexiona las piernas como fue diseñado (los pies se quedan apoyados en el
+// aterrizaje, sin hundirse). Solo recortamos la espera inicial y la cola de reposo
+// para que sea ágil, y amplificamos el tramo de SUBIDA del root motion para que el
+// salto tenga más altura (el aterrizaje queda intacto → no se hunde).
+const JUMP_CLIP_START = 0.2 // s: recorta la espera quieta, deja la anticipación
+const JUMP_CLIP_END = 1.1 // s: hasta terminar la recepción; corta la cola de reposo
 const JUMP_CLIP_FPS = 30 // Mixamo
+const JUMP_LEAP_GAIN = 3.4 // amplifica la altura del salto (solo subida)
 
 function tuneMaterials(model) {
   model.traverse((o) => {
@@ -76,16 +72,19 @@ function tuneMaterials(model) {
 
 const _wp = new THREE.Vector3()
 
-// Anula el desplazamiento VERTICAL de la raíz (caderas) de un clip: fija la Y de
-// la pista de posición a su primer valor (altura de pie). Así el clip no sube ni
-// baja al personaje —eso lo hace la física, que nunca pasa del suelo— y se evita
-// que la "amortiguación" de aterrizaje hunda al avatar bajo el piso.
-function pinRootVertical(clip) {
+// Amplifica SOLO el tramo de subida del root motion (caderas) de un clip: aleja de
+// la altura de pie las posiciones que están por ENCIMA de ella, dejando intactas
+// las de la bajada/aterrizaje. Así el salto gana altura sin tocar la recepción, que
+// mantiene los pies apoyados (la flexión de piernas la da el propio clip).
+function amplifyLeap(clip, gain) {
   for (const track of clip.tracks) {
     if (!track.name.endsWith('.position')) continue
     const v = track.values // [x,y,z, x,y,z, …]
-    const y0 = v[1]
-    for (let i = 1; i < v.length; i += 3) v[i] = y0
+    const stand = v[1] // Y de pie (primer fotograma)
+    for (let i = 1; i < v.length; i += 3) {
+      const d = v[i] - stand
+      if (d > 0) v[i] = stand + d * gain
+    }
   }
 }
 
@@ -111,28 +110,25 @@ function GlbAvatar() {
     if (run) { run.name = 'run'; out.push(run) }
     const jumpSrc = jumpGlb?.animations?.[0]
     if (jumpSrc) {
-      // Fija la vertical de la raíz a la altura de PIE (fotograma 0 del clip
-      // completo) ANTES de recortar; si lo hiciéramos después, el recorte empieza
-      // en la agachada y fijaría las caderas demasiado bajo.
-      pinRootVertical(jumpSrc)
-      // Recorta a [despegue, contacto] (subclip usa nº de fotograma = tiempo·fps):
-      // descarta la amortiguación de aterrizaje. Queda sin hundimiento y "en su
-      // sitio" en altura, que la pone la física.
+      // Recorta la espera inicial y la cola de reposo (subclip usa nº de fotograma
+      // = tiempo·fps), conservando anticipación→salto→aire→aterrizaje con flexión.
       const jump = THREE.AnimationUtils.subclip(
         jumpSrc, 'jump',
         Math.round(JUMP_CLIP_START * JUMP_CLIP_FPS),
-        Math.round(JUMP_CLIP_CONTACT * JUMP_CLIP_FPS),
+        Math.round(JUMP_CLIP_END * JUMP_CLIP_FPS),
         JUMP_CLIP_FPS
       )
+      amplifyLeap(jump, JUMP_LEAP_GAIN) // más altura, sin tocar la recepción
       out.push(jump)
     }
     return out
   }, [gltf, walkGlb, runGlb, jumpGlb])
 
-  const { actions } = useAnimations(clips, ref)
+  const { actions, mixer } = useAnimations(clips, ref)
   const last = useRef(new THREE.Vector3())
   const inited = useRef(false)
   const lastJumpId = useRef(0) // último salto disparado
+  const jumpActive = useRef(false) // clip de salto en curso (hasta que termina)
 
   useLayoutEffect(() => tuneMaterials(scene), [scene])
 
@@ -150,11 +146,17 @@ function GlbAvatar() {
       jump.setEffectiveTimeScale(JUMP_ANIM_MULT)
       jump.setEffectiveWeight(0)
     }
+    // El salto es one-shot: al terminar el clip soltamos su peso (vuelve idle/walk).
+    const onFinished = (e) => {
+      if (e.action === actions.jump) jumpActive.current = false
+    }
+    mixer?.addEventListener('finished', onFinished)
     return () => {
       for (const name of ['idle', 'walk', 'run']) actions[name]?.stop()
       actions.jump?.stop()
+      mixer?.removeEventListener('finished', onFinished)
     }
-  }, [actions])
+  }, [actions, mixer])
 
   useFrame((_, dt) => {
     const { idle, walk, run, jump } = actions
@@ -174,17 +176,15 @@ function GlbAvatar() {
 
     if (!walk) return
 
-    // Salto: cuando el Player anuncia un nuevo jumpId, reproducimos el clip desde
-    // justo antes del despegue (responsivo y en sync con la física).
+    // Salto: cuando el Player anuncia un nuevo jumpId, reproducimos el clip una vez.
+    // La animación maneja todo (sube/baja al avatar y flexiona las piernas); sigue
+    // activa hasta que termina (evento 'finished').
     if (jump && playerMotion.jumpId !== lastJumpId.current) {
       lastJumpId.current = playerMotion.jumpId
-      jump.reset().play() // el clip ya viene recortado al despegue → empieza en 0
-      jump.setEffectiveTimeScale(JUMP_ANIM_MULT).setEffectiveWeight(1)
+      jumpActive.current = true
+      jump.reset().setEffectiveTimeScale(JUMP_ANIM_MULT).setEffectiveWeight(1).play()
     }
-    // El peso del salto sigue al estado "en el aire"; al tocar el suelo lo soltamos
-    // y entra idle/walk. El clip recortado no tiene amortiguación y va "en su sitio"
-    // en vertical (la altura la pone la física, clampeada al suelo): no se hunde.
-    const jumping = playerMotion.jumping
+    const jumping = jumpActive.current
 
     // Clasifica el estado: la velocidad (delta de posición) detecta movimiento
     // de forma robusta al framerate y al congelado (con panel abierto no se
