@@ -1,42 +1,26 @@
 import React, { useMemo, useRef } from 'react'
-import { useGLTF } from '@react-three/drei'
 import { useFrame, useLoader } from '@react-three/fiber'
 import { OBJLoader } from 'three-stdlib'
 import * as THREE from 'three'
 import { playerPos } from './playerState'
 
-// Matas de pasto que se mecen con el viento y se inclinan apartándose cuando el
-// personaje pasa cerca (idea tomada del folio de Bruno Simon). Dos variantes:
-// el GLB de matas y un "tuft" en OBJ (sin textura propia: lo recoloreamos verde).
-const GRASS_URL = '/Grass.glb'
-const GRASS2_URL = '/grass2.obj'
+// Matas de pasto (tuft en OBJ, sin textura propia: lo recoloreamos verde) que se
+// mecen con el viento y se inclinan apartándose cuando el personaje pasa cerca
+// (idea tomada del folio de Bruno Simon).
+const GRASS_URL = '/grass2.obj'
 const GROUND_Y = 0.72
-const GRASS_H = 0.5
-const GRASS2_H = 0.55
+const GRASS_H = 0.55
 const BEND_RADIUS = 2.4 // distancia a la que el pasto reacciona al personaje
 const BEND_MAX = 0.8 // inclinación máxima (rad)
 
 const _box = new THREE.Box3()
 const _size = new THREE.Vector3()
 
-// Mide la huella de un modelo para auto-escalarlo a `targetH` y apoyarlo al suelo.
-function measure(obj, targetH) {
-  const c = obj.clone(true)
-  c.updateMatrixWorld(true)
-  _box.setFromObject(c)
-  _box.getSize(_size)
-  return { baseScale: targetH / (_size.y || 1), baseLift: -_box.min.y }
-}
-
 export function Grass({ items }) {
-  const { scene } = useGLTF(GRASS_URL)
-  const obj = useLoader(OBJLoader, GRASS2_URL)
+  const obj = useLoader(OBJLoader, GRASS_URL)
 
-  // Una fuente por variante: { source, baseScale, baseLift }.
-  const sources = useMemo(() => {
-    const v0 = { source: scene, ...measure(scene, GRASS_H) }
-    // grass2.obj viene sin material utilizable: le ponemos un verde low-poly y
-    // lo hacemos de doble cara (son planos cruzados).
+  // Fuente única: el OBJ recentrado, recoloreado y medido para auto-escalar.
+  const { source, baseScale, baseLift } = useMemo(() => {
     const tuft = obj.clone(true)
     const mat = new THREE.MeshStandardMaterial({
       color: '#6fa14f',
@@ -60,15 +44,16 @@ export function Grass({ items }) {
         o.geometry.translate(-cx, -minY, -cz)
       }
     })
-    const v1 = { source: tuft, ...measure(tuft, GRASS2_H) }
-    return [v0, v1]
-  }, [scene, obj])
+    _box.setFromObject(tuft)
+    _box.getSize(_size)
+    return { source: tuft, baseScale: GRASS_H / (_size.y || 1), baseLift: -_box.min.y }
+  }, [obj])
 
   // Un clon por mata (comparte geometría/material).
   const clones = useMemo(
     () =>
-      items.map((it) => {
-        const c = sources[it.variant || 0].source.clone(true)
+      items.map(() => {
+        const c = source.clone(true)
         c.traverse((o) => {
           if (o.isMesh) {
             o.castShadow = false
@@ -78,7 +63,7 @@ export function Grass({ items }) {
         })
         return c
       }),
-    [sources, items]
+    [source, items]
   )
 
   const refs = useRef([])
@@ -111,22 +96,18 @@ export function Grass({ items }) {
 
   return (
     <>
-      {items.map((it, i) => {
-        const src = sources[it.variant || 0]
-        return (
-          // Exterior: posición + escala (sin giro, para que la inclinación use ejes
-          // de mundo). Intermedio (ref): inclinación viento/personaje. Interior:
-          // giro propio de la mata.
-          <group key={i} position={[it.position[0], GROUND_Y, it.position[2]]} scale={src.baseScale * it.scale}>
-            <group ref={(el) => (refs.current[i] = el)}>
-              <primitive object={clones[i]} rotation={[0, it.rot, 0]} position={[0, src.baseLift, 0]} />
-            </group>
+      {items.map((it, i) => (
+        // Exterior: posición + escala (sin giro, para que la inclinación use ejes
+        // de mundo). Intermedio (ref): inclinación viento/personaje. Interior:
+        // giro propio de la mata.
+        <group key={i} position={[it.position[0], GROUND_Y, it.position[2]]} scale={baseScale * it.scale}>
+          <group ref={(el) => (refs.current[i] = el)}>
+            <primitive object={clones[i]} rotation={[0, it.rot, 0]} position={[0, baseLift, 0]} />
           </group>
-        )
-      })}
+        </group>
+      ))}
     </>
   )
 }
 
-useGLTF.preload(GRASS_URL)
-useLoader.preload(OBJLoader, GRASS2_URL)
+useLoader.preload(OBJLoader, GRASS_URL)

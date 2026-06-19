@@ -155,10 +155,10 @@ export function Scenery() {
       }
     }
 
-    // Matas de pasto dispersas por la zona verde, sin pisar caminos, el centro ni
-    // las estaciones. Dos variantes (Grass.glb y grass2.obj) para dar variedad.
+    // Matas de pasto (grass2.obj) dispersas por la zona verde, sin pisar caminos,
+    // el centro ni las estaciones.
     let guard = 0
-    while (grass.length < 64 && guard < 2000) {
+    while (grass.length < 110 && guard < 3500) {
       guard++
       const a = rnd() * Math.PI * 2
       const r = 4.5 + rnd() * 16
@@ -172,7 +172,6 @@ export function Scenery() {
         scale: 0.7 + rnd() * 0.7,
         rot: rnd() * Math.PI * 2,
         phase: rnd() * Math.PI * 2,
-        variant: rnd() < 0.5 ? 1 : 0,
       })
     }
 
