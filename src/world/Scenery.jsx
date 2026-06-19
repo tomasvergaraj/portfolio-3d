@@ -4,6 +4,7 @@ import { STATIONS, stationPosition } from '../data/stations'
 import { Instance, preloadModel } from './props'
 import { ModelBoundary } from './ModelBoundary'
 import { Grass } from './Grass'
+import { Flowers, FLOWER_COLOR_COUNT } from './Flowers'
 
 const TREE_URLS = ['/Tree.glb', '/Tree2.glb']
 const ROCK_URL = '/Resource_Rock_1.fbx'
@@ -77,12 +78,13 @@ const SPAWN = [0, 6]
 const SPAWN_CLEAR = 6
 
 export function Scenery() {
-  const { trees, rocks, grass } = useMemo(() => {
+  const { trees, rocks, grass, flowers } = useMemo(() => {
     const rnd = mulberry32(20240617)
     const stationAngles = STATIONS.map((s) => s.angle)
     const trees = []
     const rocks = []
     const grass = []
+    const flowers = []
 
     const farFromStations = (x, z, min = 4.2) => {
       for (const a of stationAngles) {
@@ -175,7 +177,28 @@ export function Scenery() {
       })
     }
 
-    return { trees, rocks, grass }
+    // Flores silvestres: salpican la zona verde con color, con las mismas
+    // restricciones que el pasto (fuera de caminos, centro y estaciones).
+    let fguard = 0
+    while (flowers.length < 72 && fguard < 2500) {
+      fguard++
+      const a = rnd() * Math.PI * 2
+      const r = 4.5 + rnd() * 16
+      const x = Math.cos(a) * r
+      const z = Math.sin(a) * r
+      if (onPath(x, z)) continue
+      if (Math.hypot(x, z) < 4) continue
+      if (!farFromStations(x, z, 2.4)) continue
+      flowers.push({
+        position: [x, 0, z],
+        s: 0.1 + rnd() * 0.07,
+        h: 0.06 + rnd() * 0.12,
+        rot: rnd() * Math.PI * 2,
+        c: Math.floor(rnd() * FLOWER_COLOR_COUNT),
+      })
+    }
+
+    return { trees, rocks, grass, flowers }
   }, [])
 
   const proceduralTrees = (
@@ -219,6 +242,9 @@ export function Scenery() {
           <Grass items={grass} />
         </Suspense>
       </ModelBoundary>
+
+      {/* Flores silvestres que salpican de color la zona verde */}
+      <Flowers items={flowers} />
 
       <Cloud3 position={[-16, 16, -10]} scale={1.4} />
       <Cloud3 position={[18, 19, -4]} scale={1.1} />
