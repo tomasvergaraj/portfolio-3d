@@ -70,6 +70,19 @@ function tuneMaterials(model) {
 
 const _wp = new THREE.Vector3()
 
+// Anula el desplazamiento VERTICAL de la raíz (caderas) de un clip: fija la Y de
+// la pista de posición a su primer valor (altura de pie). Así el clip no sube ni
+// baja al personaje —eso lo hace la física, que nunca pasa del suelo— y se evita
+// que la "amortiguación" de aterrizaje hunda al avatar bajo el piso.
+function pinRootVertical(clip) {
+  for (const track of clip.tracks) {
+    if (!track.name.endsWith('.position')) continue
+    const v = track.values // [x,y,z, x,y,z, …]
+    const y0 = v[1]
+    for (let i = 1; i < v.length; i += 3) v[i] = y0
+  }
+}
+
 function GlbAvatar() {
   const ref = useRef()
   // Una sola instancia: usamos la escena directa (sin clonar el skinned mesh,
@@ -91,7 +104,7 @@ function GlbAvatar() {
     const run = runGlb?.animations?.[0]
     if (run) { run.name = 'run'; out.push(run) }
     const jump = jumpGlb?.animations?.[0]
-    if (jump) { jump.name = 'jump'; out.push(jump) }
+    if (jump) { jump.name = 'jump'; pinRootVertical(jump); out.push(jump) }
     return out
   }, [gltf, walkGlb, runGlb, jumpGlb])
 
@@ -99,7 +112,6 @@ function GlbAvatar() {
   const last = useRef(new THREE.Vector3())
   const inited = useRef(false)
   const lastJumpId = useRef(0) // último salto disparado
-  const wasJumping = useRef(false) // estado de salto del frame anterior
 
   useLayoutEffect(() => tuneMaterials(scene), [scene])
 
@@ -145,19 +157,15 @@ function GlbAvatar() {
     // justo antes del despegue (responsivo y en sync con la física).
     if (jump && playerMotion.jumpId !== lastJumpId.current) {
       lastJumpId.current = playerMotion.jumpId
-      jump.reset().play() // reset() además quita el "paused" del aterrizaje previo
+      jump.reset().play()
       jump.time = JUMP_CLIP_START
       jump.setEffectiveTimeScale(JUMP_ANIM_MULT).setEffectiveWeight(1)
     }
     // El peso del salto sigue al estado "en el aire": en cuanto los pies tocan el
     // suelo lo soltamos para que walk/run entre de inmediato, sin quedarse
-    // patinando en la pose de recepción.
+    // patinando en la pose de recepción. La altura la pone la física (clampeada al
+    // suelo) y el clip va "en su sitio" en vertical, así no hay hundimiento.
     const jumping = playerMotion.jumping
-    // Al aterrizar congelamos el clip en la pose de contacto y dejamos que el
-    // crossfade lo apague. Si lo dejáramos avanzar, entraría en el "amortiguado"
-    // (las caderas bajan bajo la altura de pie) y el avatar se hundiría en el suelo.
-    if (jump && wasJumping.current && !jumping) jump.paused = true
-    wasJumping.current = jumping
 
     // Clasifica el estado: la velocidad (delta de posición) detecta movimiento
     // de forma robusta al framerate y al congelado (con panel abierto no se
