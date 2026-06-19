@@ -1,19 +1,40 @@
 import React, { useMemo, useRef } from 'react'
 import { useGLTF, useFBX } from '@react-three/drei'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useLoader } from '@react-three/fiber'
+import { OBJLoader } from 'three-stdlib'
 import * as THREE from 'three'
 
 // ─────────────────────────────────────────────────────────────────────────
-// Cargador genérico de props 3D (GLB o FBX) con auto-ajuste: como los modelos
-// vienen con escalas muy distintas (algunos en cm, otros con scale interno en
-// el nodo), medimos su bounding-box real y los escalamos a una altura objetivo,
-// apoyando la base en el suelo. Así cualquier modelo "encaja" sin tunear a mano.
+// Cargador genérico de props 3D (GLB, FBX u OBJ) con auto-ajuste: como los
+// modelos vienen con escalas muy distintas (algunos en cm, otros con scale
+// interno en el nodo), medimos su bounding-box real y los escalamos a una altura
+// objetivo, apoyando la base en el suelo. Así cualquier modelo "encaja" sin
+// tunear a mano.
 
 const GROUND_Y = 0.72
 const _box = new THREE.Box3()
 const _size = new THREE.Vector3()
 
 const isFbx = (url) => /\.fbx$/i.test(url)
+const isObj = (url) => /\.obj$/i.test(url)
+
+// Paleta low-poly para OBJ sin texturas (mapeada por nombre de material). Por
+// defecto piedra clara; los nombres conocidos del modelo de fuente se afinan.
+const OBJ_PALETTE = {
+  '02___default': '#c9c4ba', // piedra principal
+  '03___default': '#ada596', // detalles / molduras
+  '_crayfishdiffuse': '#6aa6c8', // agua
+}
+const OBJ_STONE = '#c9c4ba'
+
+function objMaterialFor(name) {
+  const key = (name || '').toLowerCase()
+  return new THREE.MeshStandardMaterial({
+    color: OBJ_PALETTE[key] || OBJ_STONE,
+    roughness: 1,
+    flatShading: true,
+  })
+}
 
 function tune(o) {
   o.traverse((n) => {
@@ -75,13 +96,40 @@ function FbxInstance(props) {
   const obj = useFBX(props.url)
   return <Placed source={obj} {...props} />
 }
+function ObjInstance(props) {
+  const raw = useLoader(OBJLoader, props.url)
+  // Los OBJ suelen traer la geometría desplazada lejos del origen y sin material
+  // utilizable. La recentramos (centro en x/z, base en y=0) y recoloreamos por
+  // nombre de material para que encaje en el mundo low-poly.
+  const source = useMemo(() => {
+    const c = raw.clone(true)
+    c.updateMatrixWorld(true)
+    _box.setFromObject(c)
+    const cx = (_box.min.x + _box.max.x) / 2
+    const cz = (_box.min.z + _box.max.z) / 2
+    const minY = _box.min.y
+    c.traverse((o) => {
+      if (!o.isMesh) return
+      o.geometry = o.geometry.clone()
+      o.geometry.translate(-cx, -minY, -cz)
+      o.material = Array.isArray(o.material)
+        ? o.material.map((m) => objMaterialFor(m.name))
+        : objMaterialFor(o.material?.name)
+    })
+    return c
+  }, [raw])
+  return <Placed source={source} {...props} />
+}
 
 // Instancia un modelo por URL, eligiendo el loader según la extensión.
 export function Instance({ url, ...rest }) {
-  return isFbx(url) ? <FbxInstance url={url} {...rest} /> : <GlbInstance url={url} {...rest} />
+  if (isObj(url)) return <ObjInstance url={url} {...rest} />
+  if (isFbx(url)) return <FbxInstance url={url} {...rest} />
+  return <GlbInstance url={url} {...rest} />
 }
 
 export function preloadModel(url) {
-  if (isFbx(url)) useFBX.preload(url)
+  if (isObj(url)) useLoader.preload(OBJLoader, url)
+  else if (isFbx(url)) useFBX.preload(url)
   else useGLTF.preload(url)
 }

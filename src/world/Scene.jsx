@@ -62,10 +62,10 @@ export function Scene({ reducedMotion = false }) {
         </Suspense>
       </ModelBoundary>
 
-      {/* Centro del pueblo en la plaza */}
+      {/* Fuente en el centro de la plaza */}
       <ModelBoundary fallback={null}>
         <Suspense fallback={null}>
-          <Instance url="/TownCenter.glb" position={[0, 0, 0]} targetH={3} />
+          <Instance url="/Fountain.obj" position={[0, 0, 0]} targetH={2.6} />
         </Suspense>
       </ModelBoundary>
 
