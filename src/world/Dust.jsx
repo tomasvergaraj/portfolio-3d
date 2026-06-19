@@ -30,12 +30,36 @@ export function Dust() {
     []
   )
   const emit = useRef(0)
+  // Estado de salto del frame anterior, para detectar el aterrizaje (flanco
+  // jumping true→false) y soltar una polvareda en anillo bajo los pies.
+  const prevJumping = useRef(false)
 
   useFrame((state, dt) => {
     const m = ref.current
     if (!m) return
     const d = Math.min(dt, 0.05)
     const w = sampleWind(state.clock.elapsedTime)
+
+    // Aterrizaje: al pasar de saltando a no-saltando, suelta un anillo de polvo
+    // que sale disparado hacia afuera bajo los pies (impacto).
+    if (prevJumping.current && !playerMotion.jumping) {
+      const n = 12
+      for (let k = 0; k < n; k++) {
+        const p = parts.find((q) => q.life <= 0)
+        if (!p) break
+        const a = (k / n) * Math.PI * 2 + Math.random() * 0.4
+        const r = 0.18 + Math.random() * 0.2
+        p.life = p.max = 0.6
+        p.x = playerPos.x + Math.cos(a) * r
+        p.z = playerPos.z + Math.sin(a) * r
+        p.y = GROUND_Y
+        p.vy = 0.12 + Math.random() * 0.22
+        p.scale = 0.22 + Math.random() * 0.18
+        p.dir = a
+        p.drift = 0.9 + Math.random() * 0.7 // sale disparado en anillo
+      }
+    }
+    prevJumping.current = playerMotion.jumping
 
     // Emisión mientras se mueve (más al correr).
     if (playerMotion.moving) {
