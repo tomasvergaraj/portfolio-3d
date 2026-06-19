@@ -2,6 +2,7 @@ import React, { useRef, useMemo, useLayoutEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { worldState } from './worldState'
+import { sampleWind } from './wind'
 
 // ── Hojas que caen ────────────────────────────────────────────────────────
 // Instancia ligera: hojitas que bajan meciéndose y se reciclan arriba. Da vida
@@ -53,9 +54,22 @@ export function Leaves({ reducedMotion = false }) {
     if (reducedMotion || !m) return
     const d = Math.min(dt, 0.05)
     const t = state.clock.elapsedTime
+    const w = sampleWind(t)
+    // El viento arrastra las hojas horizontalmente mientras caen (la racha las
+    // empuja más). Comparten el mismo vector que el pasto y el polvo.
+    const dx = w.dirX * w.strength * 1.1 * d
+    const dz = w.dirZ * w.strength * 1.1 * d
     for (let i = 0; i < COUNT; i++) {
       const l = leaves[i]
       l.y -= l.vy * d
+      l.x += dx
+      l.z += dz
+      // Envolvente: si la hoja sale del área, reaparece por el lado contrario en
+      // vez de desvanecerse fuera de cuadro.
+      if (l.x > AREA) l.x -= AREA * 2
+      else if (l.x < -AREA) l.x += AREA * 2
+      if (l.z > AREA) l.z -= AREA * 2
+      else if (l.z < -AREA) l.z += AREA * 2
       if (l.y < GROUND) {
         l.y = TOP
         l.x = (Math.random() * 2 - 1) * AREA

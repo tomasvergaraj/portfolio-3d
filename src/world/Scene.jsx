@@ -80,7 +80,7 @@ export function Scene({ reducedMotion = false }) {
         <StationMarker key={st.id} station={st} position={stationPosition(st.angle)} />
       ))}
 
-      <Player />
+      <Player reducedMotion={reducedMotion} />
       <Dust />
 
       {/* Motas que flotan en el aire y captan la luz: dan vida y un aire cálido

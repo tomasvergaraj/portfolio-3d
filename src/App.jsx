@@ -8,6 +8,7 @@ import { SectionMenu } from './ui/SectionMenu'
 import { StationPanel } from './ui/StationPanel'
 import { Loader } from './ui/Loader'
 import { AudioToggle } from './ui/AudioToggle'
+import { Notification } from './ui/Notification'
 import { useKeyboard } from './controls/useKeyboard'
 import { useStore } from './store'
 
@@ -39,6 +40,7 @@ export default function App() {
       </Canvas>
 
       <Hud onOpenMenu={() => setMenu(true)} />
+      <Notification />
       <Joystick />
       <SectionMenu openMenu={menu} setOpenMenu={setMenu} onPick={openStation} />
       <StationPanel />

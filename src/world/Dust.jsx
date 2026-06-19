@@ -2,6 +2,7 @@ import React, { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { playerPos, playerMotion } from './playerState'
+import { sampleWind } from './wind'
 
 // Polvo bajo el personaje al caminar/correr: pequeñas motas que suben, crecen y
 // se desvanecen. Más frecuentes al hacer sprint. Da peso y velocidad al avance.
@@ -34,6 +35,7 @@ export function Dust() {
     const m = ref.current
     if (!m) return
     const d = Math.min(dt, 0.05)
+    const w = sampleWind(state.clock.elapsedTime)
 
     // Emisión mientras se mueve (más al correr).
     if (playerMotion.moving) {
@@ -62,8 +64,9 @@ export function Dust() {
       if (p.life > 0) {
         p.life -= d
         p.y += p.vy * d
-        p.x += Math.cos(p.dir) * p.drift * d
-        p.z += Math.sin(p.dir) * p.drift * d
+        // Deriva radial propia (de la pisada) + arrastre del viento global.
+        p.x += (Math.cos(p.dir) * p.drift + w.dirX * w.strength * 0.55) * d
+        p.z += (Math.sin(p.dir) * p.drift + w.dirZ * w.strength * 0.55) * d
         const k = Math.max(p.life / p.max, 0) // 1 → 0
         const grow = 1.4 - 0.9 * k
         _d.position.set(p.x, p.y, p.z)

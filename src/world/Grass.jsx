@@ -3,6 +3,7 @@ import { useFrame, useLoader } from '@react-three/fiber'
 import { OBJLoader } from 'three-stdlib'
 import * as THREE from 'three'
 import { playerPos } from './playerState'
+import { sampleWind } from './wind'
 
 // Matas de pasto (tuft en OBJ, sin textura propia: lo recoloreamos verde) que se
 // mecen con el viento y se inclinan apartándose cuando el personaje pasa cerca
@@ -70,13 +71,25 @@ export function Grass({ items }) {
 
   useFrame((state) => {
     const t = state.clock.elapsedTime
+    const w = sampleWind(t)
     for (let i = 0; i < items.length; i++) {
       const g = refs.current[i]
       if (!g) continue
       const it = items[i]
-      // Viento: vaivén suave desfasado por mata.
-      let bx = Math.sin(t * 1.5 + it.phase) * 0.07
-      let bz = Math.cos(t * 1.2 + it.phase) * 0.05
+      // Viento global coherente: una onda que viaja en la dirección del viento
+      // (la fase depende de la posición proyectada sobre ese eje, así la racha
+      // "barre" el campo) más una inclinación base hacia donde sopla. La copa se
+      // tumba en dirección (dirX, dirZ): bz sigue a dirX, bx sigue a -dirZ (igual
+      // convención que el apartarse del personaje, más abajo).
+      const proj = it.position[0] * w.dirX + it.position[2] * w.dirZ
+      const wave = Math.sin(t * 2.1 - proj * 0.4 + it.phase) * 0.08
+      const lean = 0.1 + (0.16 + wave) * w.strength
+      let bx = -w.dirZ * lean
+      let bz = w.dirX * lean
+      // Pequeño temblor propio para que las matas no queden perfectamente
+      // paralelas entre sí en una racha fuerte.
+      bx += Math.sin(t * 1.7 + it.phase) * 0.025
+      bz += Math.cos(t * 1.4 + it.phase) * 0.02
       // Apartarse del personaje: inclina la copa en dirección contraria.
       const dx = it.position[0] - playerPos.x
       const dz = it.position[2] - playerPos.z

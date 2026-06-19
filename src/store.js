@@ -6,6 +6,10 @@ import { create } from 'zustand'
 export const useStore = create((set, get) => ({
   // id de la estación dentro del radio de interacción, o null
   nearby: null,
+  // notificación de llegada a una zona: { id, n } o null. `n` es un contador que
+  // crece en cada aviso para reiniciar la animación al re-entrar a la misma zona.
+  notice: null,
+  _noticeN: 0,
   // id de la estación con el panel abierto, o null
   active: null,
   // progreso de carga 0–100 y bandera de listo
@@ -15,6 +19,8 @@ export const useStore = create((set, get) => ({
   setNearby: (id) => {
     if (get().nearby !== id) set({ nearby: id })
   },
+  notify: (id) => set((s) => ({ notice: { id, n: s._noticeN + 1 }, _noticeN: s._noticeN + 1 })),
+  clearNotice: () => set({ notice: null }),
   open: (id) => set({ active: id }),
   close: () => set({ active: null }),
   toggle: (id) => set((s) => ({ active: s.active === id ? null : id })),

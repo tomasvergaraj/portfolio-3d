@@ -16,7 +16,13 @@ const SPRINT_MULT = 1.85 // velocidad al correr (Shift / joystick a fondo)
 // aquí solo la aplicamos al cuerpo, así pose y altura van perfectamente alineadas.
 const CLAMP_R = 20.5
 const INTERACT_R = 3.6
+// Radio de "zona" de cada estación: más amplio que el de interacción, para que la
+// notificación de llegada aparezca al acercarse, antes del prompt de "Entrar".
+const ZONE_R = 6.4
 const CAM_OFFSET = new THREE.Vector3(0, 12.5, 16.5)
+// Parallax: cuánto se desplaza la cámara siguiendo el puntero (sensación folio).
+const PARALLAX_POS = new THREE.Vector2(2.6, 1.1) // desplazamiento de la cámara (x, y)
+const PARALLAX_LOOK = new THREE.Vector2(1.1, 0.5) // desplazamiento del punto mirado
 const DOG_LAG = 26
 // Distancia mínima que el perro guarda respecto al avatar. En reposo el rastro
 // se llena con la posición actual del jugador, así que sin esto el perro se
@@ -183,12 +189,13 @@ function Dog({ dogRef }) {
   )
 }
 
-export function Player() {
+export function Player({ reducedMotion = false }) {
   const groupRef = useRef()
   const bodyRef = useRef()
   const dogRef = useRef()
   const trail = useRef([])
   const lastNearby = useRef(null)
+  const lastZone = useRef(null)
   const walk = useRef(0)
   const dogGait = useRef(0)
   // Espacio pulsado el frame anterior, para disparar el salto solo en el flanco.
@@ -342,6 +349,19 @@ export function Player() {
       )
       _lookDesired.set(g.position.x, g.position.y + 1.2, g.position.z)
     }
+
+    // Parallax de puntero: desplaza sutilmente cámara y punto mirado siguiendo el
+    // mouse (state.pointer va de -1 a 1). Solo en seguimiento/órbita —nunca con un
+    // panel abierto ni durante la intro— y se anula con prefers-reduced-motion.
+    if (!reducedMotion && !station && ready && introDone) {
+      const px = THREE.MathUtils.clamp(state.pointer.x, -1, 1)
+      const py = THREE.MathUtils.clamp(state.pointer.y, -1, 1)
+      _camDesired.x += px * PARALLAX_POS.x
+      _camDesired.y += py * PARALLAX_POS.y
+      _lookDesired.x += px * PARALLAX_LOOK.x
+      _lookDesired.y += py * PARALLAX_LOOK.y
+    }
+
     if (!ready) {
       // Durante la carga, mantenemos la vista aérea de la intro.
       cam.position.copy(INTRO_START_POS)
@@ -353,6 +373,15 @@ export function Player() {
       intro.current.t += Math.min(dt, 0.4) // tiempo real (acotado) → ~constante
       const p = smooth(Math.min(intro.current.t / INTRO_DUR, 1))
       cam.position.lerpVectors(INTRO_START_POS, _camDesired, p)
+      // Barrido en arco: en vez de un dolly recto, la cámara entra curvando —se
+      // abre hacia un lado y se eleva en el punto medio del vuelo (pico en p=0.5)
+      // antes de asentarse. Da una entrada más cinematográfica. Se omite con
+      // prefers-reduced-motion para no mover de más.
+      if (!reducedMotion) {
+        const arc = Math.sin(p * Math.PI)
+        cam.position.x += arc * 15
+        cam.position.y += arc * 4.5
+      }
       lookAt.current.lerpVectors(INTRO_LOOK, _lookDesired, p)
       cam.lookAt(lookAt.current)
     } else {
@@ -375,6 +404,23 @@ export function Player() {
     if (nearest !== lastNearby.current) {
       lastNearby.current = nearest
       useStore.getState().setNearby(nearest)
+    }
+
+    // Zona de llegada (radio más amplio que el de interacción): al cruzar hacia
+    // la zona de una estación dispara una notificación transitoria. Solo en el
+    // flanco de entrada; si sales y vuelves, se dispara de nuevo.
+    let zone = null
+    let zd = ZONE_R
+    for (const s of STATION_POS) {
+      const dist = Math.hypot(g.position.x - s.x, g.position.z - s.z)
+      if (dist < zd) {
+        zd = dist
+        zone = s.id
+      }
+    }
+    if (zone !== lastZone.current) {
+      lastZone.current = zone
+      if (zone) useStore.getState().notify(zone)
     }
   })
 
