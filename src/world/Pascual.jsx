@@ -1,32 +1,27 @@
-import React, { useRef, useEffect, useLayoutEffect } from 'react'
-import { useGLTF } from '@react-three/drei'
+import React, { useRef, useEffect, useMemo, useLayoutEffect } from 'react'
+import { useFBX, useAnimations } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
-// "Pascual": un gato que deambula por la isla. Aparece en una posición aleatoria,
-// elige destinos al azar y camina hacia ellos; al llegar se queda quieto un rato y
-// elige otro. El ciclo de patas del modelo riggeado (export de Unreal) colapsa con
-// el skinning de three.js al reproducirse, así que usamos la malla estática y el
-// "caminar" lo da un bamboleo procedural que se activa al moverse y se apaga al
-// parar — el efecto buscado de caminar/detenerse.
-const URL = '/pascual.glb'
+// "Pascual": un gato que deambula por la isla con su animación de caminar REAL.
+// Aparece en posición aleatoria, elige destinos al azar, camina hacia ellos (clip
+// de caminar activo) y al llegar se detiene un rato (clip en fade-out → pose
+// neutra), repitiendo. Se carga desde FBX porque el rig de la versión glTF se
+// desarmaba al animar; el FBXLoader de three sí lo reproduce bien.
+const URL = '/pascual_walk2.fbx'
 const GROUND_Y = 0.72
-
-// El modelo viene centrado en el origen (~1.75 de alto). Lo escalamos a tamaño de
-// gato, y LIFT (media altura) apoya los pies en el suelo. Afinados sobre el render.
-const SCALE = 0.62
-const LIFT = 0.87 // media altura del modelo (centro→base)
-const FACE_OFFSET = 0 // giro para alinear el frente del modelo con +z
+const TARGET_H = 1.1 // alto objetivo del gato (auto-escala desde el bbox)
+const FACE_OFFSET = -Math.PI / 2 // el modelo mira a +x; lo alineamos con +z (avance)
 
 const WALK_SPEED = 2.1 // u/s
-const WANDER_MIN = 4 // radio interior donde elige destinos
-const WANDER_MAX = 16 // radio exterior (la isla llega a ~20)
+const ANIM_TS = 1.1 // velocidad del clip de caminar
+const WANDER_MIN = 4
+const WANDER_MAX = 16
 const ARRIVE = 0.6
 const TURN = 0.12
+const FADE = 0.25
 const PAUSE_MIN = 1.5
 const PAUSE_MAX = 4.5
-const BOB_FREQ = 10 // velocidad del bamboleo al caminar
-const BOB_AMP = 0.12 // altura del bamboleo (pre-escala)
 
 function lerpAngle(a, b, t) {
   let d = b - a
@@ -37,19 +32,30 @@ function lerpAngle(a, b, t) {
 
 export function Pascual() {
   const group = useRef()
-  const inner = useRef()
-  const { scene } = useGLTF(URL)
-  const st = useRef({ mode: 'pause', tx: 0, tz: 0, timer: 1, phase: 0 })
+  const fbx = useFBX(URL)
+  const { actions } = useAnimations(fbx.animations, group)
+  const walk = useRef(null)
+  const st = useRef({ mode: 'pause', tx: 0, tz: 0, timer: 1, walking: false })
+
+  // Auto-ajuste: escala a TARGET_H y apoya los pies en el suelo (bbox de bind).
+  const { scale, lift } = useMemo(() => {
+    fbx.updateWorldMatrix(true, true)
+    const box = new THREE.Box3().setFromObject(fbx)
+    const size = new THREE.Vector3()
+    box.getSize(size)
+    const s = TARGET_H / (size.y || 1)
+    return { scale: s, lift: -box.min.y }
+  }, [fbx])
 
   useLayoutEffect(() => {
-    scene.traverse((o) => {
-      if (o.isMesh) {
+    fbx.traverse((o) => {
+      if (o.isMesh || o.isSkinnedMesh) {
         o.castShadow = true
         o.receiveShadow = false
         o.frustumCulled = false
       }
     })
-  }, [scene])
+  }, [fbx])
 
   const pickTarget = () => {
     const ang = Math.random() * Math.PI * 2
@@ -59,26 +65,29 @@ export function Pascual() {
   }
 
   useEffect(() => {
-    // Aparición en una posición aleatoria del mapa, mirando hacia un lado al azar.
+    const a = Object.values(actions)[0]
+    walk.current = a
+    a?.setLoop(THREE.LoopRepeat, Infinity)
+    // Aparición en posición aleatoria del mapa, mirando hacia un lado al azar.
     const ang = Math.random() * Math.PI * 2
     const r = WANDER_MIN + Math.random() * (WANDER_MAX - WANDER_MIN)
     group.current?.position.set(Math.cos(ang) * r, GROUND_Y, Math.sin(ang) * r)
     if (group.current) group.current.rotation.y = Math.random() * Math.PI * 2
     st.current.timer = 0.5 + Math.random() * 1.5 // breve pausa inicial
-  }, [])
+    return () => a?.stop()
+  }, [actions])
 
   useFrame((_, dt) => {
     const g = group.current
+    const a = walk.current
     if (!g) return
     const d = Math.min(dt, 0.05)
     const s = st.current
-    const inr = inner.current
 
     if (s.mode === 'pause') {
-      // Quieto: baja suavemente el bamboleo (caminar desactivado).
-      if (inr) {
-        inr.position.y += (0 - inr.position.y) * 0.2
-        inr.rotation.x += (0 - inr.rotation.x) * 0.2
+      if (a && s.walking) {
+        a.fadeOut(FADE)
+        s.walking = false
       }
       s.timer -= d
       if (s.timer <= 0) {
@@ -88,7 +97,6 @@ export function Pascual() {
       return
     }
 
-    // Camina hacia el destino.
     const dx = s.tx - g.position.x
     const dz = s.tz - g.position.z
     const dist = Math.hypot(dx, dz)
@@ -102,21 +110,18 @@ export function Pascual() {
     g.position.x += nx * WALK_SPEED * d
     g.position.z += nz * WALK_SPEED * d
     g.rotation.y = lerpAngle(g.rotation.y, Math.atan2(nx, nz), TURN)
-    // Bamboleo procedural = "animación de caminar" activada.
-    s.phase += d * BOB_FREQ
-    if (inr) {
-      inr.position.y = Math.abs(Math.sin(s.phase)) * BOB_AMP
-      inr.rotation.x = Math.sin(s.phase * 2) * 0.05
+    if (a && !s.walking) {
+      a.reset().fadeIn(FADE).play()
+      a.setEffectiveTimeScale(ANIM_TS)
+      s.walking = true
     }
   })
 
   return (
-    <group ref={group} scale={SCALE}>
-      <group ref={inner}>
-        <primitive object={scene} position={[0, LIFT, 0]} rotation={[0, FACE_OFFSET, 0]} />
-      </group>
+    <group ref={group} scale={scale}>
+      <primitive object={fbx} position={[0, lift, 0]} rotation={[0, FACE_OFFSET, 0]} />
     </group>
   )
 }
 
-useGLTF.preload(URL)
+useFBX.preload(URL)
