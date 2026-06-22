@@ -27,10 +27,11 @@ export function Effects() {
   })
   return (
     <EffectComposer disableNormalPass multisampling={0}>
-      {/* Profundidad de campo: enfoca al sujeto y desenfoca apenas el primer plano
-          cercano y el agua/horizonte lejano — look de diorama. Desenfoque contenido
-          para no fundir la escena. */}
-      <DepthOfField target={focus.current} worldFocusRange={19} bokehScale={2.4} />
+      {/* Profundidad de campo MUY sutil: rango de foco amplio para que el avatar y
+          casi toda la isla queden nítidos; solo el agua/horizonte lejano y el primer
+          plano muy cercano se suavizan apenas. Desenfoque bajo para no "emborronar"
+          al personaje. */}
+      <DepthOfField target={focus.current} worldFocusRange={34} bokehScale={1.0} />
       <SMAA />
       <Bloom intensity={0.92} luminanceThreshold={0.68} luminanceSmoothing={0.26} mipmapBlur radius={0.75} />
       <BrightnessContrast brightness={0.012} contrast={0.135} />
