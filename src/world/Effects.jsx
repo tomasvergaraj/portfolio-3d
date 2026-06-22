@@ -1,6 +1,7 @@
 import React from 'react'
 import {
   EffectComposer,
+  DepthOfField,
   Bloom,
   Vignette,
   BrightnessContrast,
@@ -16,6 +17,11 @@ import {
 export function Effects() {
   return (
     <EffectComposer disableNormalPass multisampling={0}>
+      {/* Profundidad de campo suave: la isla (foco a ~24 u, rango amplio) queda
+          nítida y el agua/horizonte lejano y el primer plano muy cercano se
+          desenfocan apenas — look de diorama. Desenfoque contenido para no fundir
+          la escena. */}
+      <DepthOfField worldFocusDistance={23} worldFocusRange={19} bokehScale={2.4} />
       <SMAA />
       <Bloom intensity={0.92} luminanceThreshold={0.68} luminanceSmoothing={0.26} mipmapBlur radius={0.75} />
       <BrightnessContrast brightness={0.012} contrast={0.135} />
