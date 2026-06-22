@@ -11,7 +11,7 @@ import * as THREE from 'three'
 const URL = '/pascual_walk2.fbx'
 const GROUND_Y = 0.72
 const TARGET_H = 1.1 // alto objetivo del gato (auto-escala desde el bbox)
-const FACE_OFFSET = -Math.PI / 2 // el modelo mira a +x; lo alineamos con +z (avance)
+const FACE_OFFSET = 0 // el modelo ya mira a +z = la dirección de avance (verificado)
 
 const WALK_SPEED = 2.1 // u/s
 const ANIM_TS = 1.1 // velocidad del clip de caminar
