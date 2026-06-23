@@ -73,5 +73,12 @@ Screenshots antes/después en `screenshots/iterN-*` (ignorados por git).
 - **Para activarlo:** dejar un modelo válido en `public/` y poner su ruta en `AVATAR_MODEL_URL`. Ver README → "Cambiar el avatar por un modelo 3D real".
 - **Recomendación al usuario:** re-descargar de Mixamo como **FBX Binary** (7.x) o `.glb`, idealmente con animación Walking/Running "with skin" para movimiento real de piernas.
 
+## Iteración 107 — Logro de exploración "visitaste las 5 secciones"
+- **Idea (folio-2025 de Bruno Simon):** recompensar el explorar el mundo entero con un logro/achievement.
+- **Cambio:** `src/store.js` rastrea `visited` (ids abiertos) en `open`/`toggle` y expone `achievementN` + `unlockAchievement` (idempotente). `src/App.jsx` detecta cuando se visitaron las 5 secciones y, una vez por sesión, dispara el desbloqueo + confeti (`celebrate`) + fanfarria. Nuevo `src/ui/Achievement.jsx`: toast dorado con insignia de trofeo, auto-descarte (5.6 s), z-index 70 para flotar sobre el panel abierto. Estilos `.ach*` en `src/styles.css`.
+- **Efecto:** al abrir las 5 estaciones aparece el toast "Explorador — visitaste las 5 secciones" con confeti y fanfarria. Verificado por Playwright (toast sobre panel + confeti en el mundo, sin errores de consola).
+
 ---
+**Nota:** la bitácora real continúa en los commits `iter N` de git (vamos en iter 107); esta lista quedó detallada hasta la 13.
+
 **Estado del loop:** 12 iteraciones completadas. Visual: cielo, luz, sombras de contacto, agua, atmósfera. Jugabilidad/bugs: avatar y mascota asentados sobre el suelo, sprint con Shift y con joystick a fondo, mascota mirando hacia donde avanza, mascota que galopa al correr, etiquetas 2D ocultas con el modal, cámara cinematográfica al entrar/salir de secciones. **Pendiente que requiere asset externo:** cambiar el avatar de primitivas por un modelo `.glb` riggeado (Mixamo) — el proxy bloquea descargas, así que el usuario debe aportar el archivo en `public/`. También opcional: HDRI local para reflejos sin depender del CDN.

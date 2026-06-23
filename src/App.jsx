@@ -9,11 +9,13 @@ import { StationPanel } from './ui/StationPanel'
 import { Loader } from './ui/Loader'
 import { AudioToggle } from './ui/AudioToggle'
 import { Notification } from './ui/Notification'
+import { Achievement } from './ui/Achievement'
 import { useKeyboard } from './controls/useKeyboard'
 import { useKonami } from './controls/useKonami'
 import { useDeepLinks } from './useDeepLinks'
 import { fanfare } from './audio/sound'
 import { useStore } from './store'
+import { STATIONS } from './data/stations'
 
 export default function App() {
   useKeyboard()
@@ -26,6 +28,19 @@ export default function App() {
   const reduce = useReducedMotion()
   const [menu, setMenu] = useState(false)
   const openStation = useStore((s) => s.open)
+  const visited = useStore((s) => s.visited)
+
+  // Logro de exploración: al visitar (abrir) las 5 secciones se desbloquea una
+  // vez por sesión, con su toast, una ráfaga de confeti y la fanfarria. Idea del
+  // folio de Bruno Simon (recompensar el recorrer el mundo entero).
+  useEffect(() => {
+    if (visited.length < STATIONS.length) return
+    const s = useStore.getState()
+    if (s.achievementN !== 0) return
+    s.unlockAchievement()
+    s.celebrate()
+    fanfare()
+  }, [visited])
 
   // Detección de dispositivo táctil para mostrar el joystick.
   useEffect(() => {
@@ -54,6 +69,7 @@ export default function App() {
 
       <Hud onOpenMenu={() => setMenu(true)} />
       <Notification />
+      <Achievement />
       <Joystick />
       <SectionMenu openMenu={menu} setOpenMenu={setMenu} onPick={openStation} />
       <StationPanel />
