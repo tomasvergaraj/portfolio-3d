@@ -16,7 +16,16 @@ const SEG = 76
 // vez de bultos planos, sobre todo con la cámara casi cenital.
 const VALLEY = new THREE.Color('#9dbe7a')
 const HILLTOP = new THREE.Color('#c2d899')
+const SAND = new THREE.Color('#e0cfa0') // pasto que se seca al llegar a la playa
+const SAND_BEACH = '#e6d6b0' // arena de la orilla
 const _c = new THREE.Color()
+
+// Playa en pendiente: el pasto baja a SHORE_GRASS_Y en el rim y desde ahí una
+// arena desciende hasta meterse bajo el agua (BEACH_BOTTOM).
+const SHORE_GRASS_Y = 0.45
+const BEACH_OUT = 28
+const BEACH_BOTTOM = -0.9
+const GRASS_EDGE_START = 20 // donde el pasto empieza a rodar hacia la orilla
 
 function buildGrassTop() {
   const positions = []
@@ -25,8 +34,11 @@ function buildGrassTop() {
 
   const pushVertex = (x, y, z) => {
     positions.push(x, y, z)
+    const r = Math.hypot(x, z)
     const h01 = Math.min(Math.max((y - TOP_Y) / AMP, 0), 1)
     _c.copy(VALLEY).lerp(HILLTOP, h01)
+    // Tinte arenoso hacia el borde (el pasto se "seca" al llegar a la playa).
+    _c.lerp(SAND, THREE.MathUtils.smoothstep(r, 21, 24) * 0.85)
     colors.push(_c.r, _c.g, _c.b)
   }
 
@@ -39,8 +51,10 @@ function buildGrassTop() {
       const a = (si / SEG) * Math.PI * 2
       const x = Math.cos(a) * r
       const z = Math.sin(a) * r
-      // El rim se fuerza al baseline para matar limpio con el faldón.
-      const y = ri === RINGS ? TOP_Y : sampleHeight(x, z)
+      // El borde rueda hacia la orilla: la altura del relieve baja a
+      // SHORE_GRASS_Y, así el pasto entrega el paso a la arena sin un corte seco.
+      const edge = THREE.MathUtils.smoothstep(r, GRASS_EDGE_START, ISLAND_R)
+      const y = ri === RINGS ? SHORE_GRASS_Y : THREE.MathUtils.lerp(sampleHeight(x, z), SHORE_GRASS_Y, edge)
       pushVertex(x, y, z)
     }
   }
@@ -95,23 +109,19 @@ export function Island() {
         <meshStandardMaterial vertexColors roughness={1} flatShading />
       </mesh>
 
-      {/* Faldón verde vertical del borde (cilindro abierto que cierra el canto
-          entre el rim de la tapa, y=TOP_Y, y el inicio del talud). */}
-      <mesh position={[0, TOP_Y - 0.7, 0]} receiveShadow>
-        <cylinderGeometry args={[ISLAND_R, ISLAND_R, 1.4, SEG, 1, true]} />
-        <meshStandardMaterial color="#94b572" roughness={1} flatShading side={THREE.DoubleSide} />
+      {/* Playa en pendiente: arena que baja del rim del pasto (SHORE_GRASS_Y)
+          hasta meterse bajo el agua, reemplazando el viejo canto vertical. */}
+      <mesh position={[0, (SHORE_GRASS_Y + BEACH_BOTTOM) / 2, 0]} receiveShadow>
+        <cylinderGeometry
+          args={[ISLAND_R, BEACH_OUT, SHORE_GRASS_Y - BEACH_BOTTOM, SEG, 1, true]}
+        />
+        <meshStandardMaterial color={SAND_BEACH} roughness={1} flatShading side={THREE.DoubleSide} />
       </mesh>
 
-      {/* Talud de tierra */}
+      {/* Talud de tierra (masa sumergida bajo la playa) */}
       <mesh position={[0, -3.2, 0]}>
         <cylinderGeometry args={[ISLAND_R, ISLAND_R * 0.5, 6, 72]} />
         <meshStandardMaterial color="#8a6b4a" roughness={1} flatShading />
-      </mesh>
-
-      {/* Anillo de arena en la orilla */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.72, 0]} receiveShadow>
-        <ringGeometry args={[ISLAND_R - 2.4, ISLAND_R + 0.3, 72]} />
-        <meshStandardMaterial color="#e6d6b0" roughness={1} side={THREE.DoubleSide} />
       </mesh>
     </group>
   )

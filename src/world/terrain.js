@@ -21,6 +21,13 @@ import { STATIONS, stationPosition } from '../data/stations'
 export const TOP_Y = 0.7
 export const ISLAND_R = 24
 
+// Radio aproximado de la línea de agua sobre la playa en pendiente (donde la
+// arena cruza el nivel del mar). Lo comparten la playa (Island) y la espuma de
+// orilla del agua (Water) para que la rompiente caiga justo en la orilla.
+export const SHORE_R = 26.2
+// Nivel base del mar (la cresta del oleaje queda por debajo de la orilla).
+export const WATER_Y = -0.35
+
 // Ganancia de las lomas (alto máximo, en unidades de mundo, sobre el baseline).
 export const AMP = 1.7
 
