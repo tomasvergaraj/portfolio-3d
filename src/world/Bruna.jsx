@@ -20,10 +20,11 @@ const URL = '/dog_walk.glb'
 const SCALE = 243
 // El modelo mira a +x; restamos π/2 al rumbo para que el hocico apunte al avance.
 const FACE_OFFSET = Math.PI / 2
-// El pelaje viene de una textura azul-grisácea con líneas más oscuras en cabeza y
-// lomo. Tiñendo el material con un azul-gris OSCURO el color multiplica la textura
-// y comprime cuerpo y líneas hacia ese mismo tono oscuro (sin perder ojos/forma).
-const FUR = '#3f4756'
+// La textura del pelaje trae líneas más oscuras en cabeza y lomo; teñirla deja
+// SIEMPRE ese contraste (cuerpo más claro que las líneas). Para que líneas y
+// pelaje sean EL MISMO color, usamos un color sólido (sin mapa): un gris oscuro
+// uniforme en todo el cuerpo.
+const FUR = '#262931'
 
 const WALK_SPEED = 2.7 // u/s (trote de perro, algo más vivo que el gato)
 const ANIM_TS = 1.25 // velocidad del clip de caminar
@@ -72,11 +73,14 @@ export function Bruna() {
         o.castShadow = true
         o.receiveShadow = false
         o.frustumCulled = false
-        // Oscurece el gris del pelaje (clonamos el material para no tocar la
-        // caché de useGLTF; conserva la textura y sólo cambia el tinte).
+        // Pelaje gris oscuro UNIFORME: quitamos la textura (que traía las líneas
+        // claras/oscuras) y usamos un color sólido, así líneas y pelaje quedan del
+        // mismo tono. Clonamos el material para no tocar la caché de useGLTF.
         if (o.material) {
           o.material = o.material.clone()
+          o.material.map = null
           o.material.color.set(FUR)
+          o.material.needsUpdate = true
         }
       }
     })
