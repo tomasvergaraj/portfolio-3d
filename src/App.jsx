@@ -31,7 +31,7 @@ export default function App() {
     <>
       <Canvas
         shadows="soft"
-        dpr={[1, 2]}
+        dpr={[1, 1.5]}
         camera={{ position: [0, 12.5, 22], fov: 42, near: 0.1, far: 220 }}
         gl={{ antialias: false, powerPreference: 'high-performance' }}
         onPointerMissed={() => useStore.getState().close()}

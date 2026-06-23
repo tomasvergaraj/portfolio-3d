@@ -1,4 +1,5 @@
-import React, { Suspense, useRef } from 'react'
+import React, { Suspense, useRef, useEffect } from 'react'
+import { useThree } from '@react-three/fiber'
 import { Environment, Sparkles } from '@react-three/drei'
 import { Island } from './Island'
 import { Walkway } from './Walkway'
@@ -20,6 +21,11 @@ import { STATIONS, stationPosition } from '../data/stations'
 
 export function Scene({ reducedMotion = false }) {
   const keyLight = useRef()
+  // En dev exponemos el renderer para medir draw calls/triángulos (perf).
+  const { gl } = useThree()
+  useEffect(() => {
+    if (import.meta.env?.DEV && typeof window !== 'undefined') window.__gl = gl
+  }, [gl])
   return (
     <>
       {/* Domo de cielo con gradiente (cenit → horizonte) y niebla afinada al
