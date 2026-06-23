@@ -36,7 +36,7 @@ export function Effects() {
       <Bloom intensity={0.92} luminanceThreshold={0.68} luminanceSmoothing={0.26} mipmapBlur radius={0.75} />
       <BrightnessContrast brightness={0.012} contrast={0.135} />
       <HueSaturation saturation={0.16} hue={0} />
-      <Vignette offset={0.28} darkness={0.66} eskil={false} />
+      <Vignette offset={0.26} darkness={0.74} eskil={false} />
     </EffectComposer>
   )
 }

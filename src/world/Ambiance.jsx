@@ -96,9 +96,9 @@ export function Leaves({ reducedMotion = false }) {
 // Respira la luz principal (intensidad + calidez) y el cielo/niebla en un ciclo
 // largo y suave; no llega a "noche" para no romper la dirección de arte.
 const DAY_BG = new THREE.Color('#dbeaf3')
-const DUSK_BG = new THREE.Color('#e7d8c4')
-const WARM = new THREE.Color('#fff1d4')
-const COOL = new THREE.Color('#ffe9c8')
+const DUSK_BG = new THREE.Color('#f1d6b2') // atardecer más cálido (durazno)
+const WARM = new THREE.Color('#fff1d4') // sol de día
+const COOL = new THREE.Color('#ffd49c') // sol dorado de atardecer
 const PERIOD = 48 // segundos por ciclo
 
 export function DayNight({ lightRef }) {
@@ -107,10 +107,10 @@ export function DayNight({ lightRef }) {
     const k = 0.5 + 0.5 * Math.sin((state.clock.elapsedTime / PERIOD) * Math.PI * 2)
     worldState.dusk = k // 0 día → 1 atardecer (lo leen las luciérnagas)
     if (lightRef?.current) {
-      lightRef.current.intensity = 1.55 + k * 0.4
+      lightRef.current.intensity = 1.5 + k * 0.55
       lightRef.current.color.copy(WARM).lerp(COOL, k)
     }
-    const tint = k * 0.5 // como mucho a mitad de camino al atardecer
+    const tint = k * 0.62 // deja que el atardecer tiña más el cielo/niebla
     _c.copy(DAY_BG).lerp(DUSK_BG, tint)
     if (scene.background?.isColor) scene.background.lerp(_c, 0.05)
     if (scene.fog) scene.fog.color.lerp(_c, 0.05)

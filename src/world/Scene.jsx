@@ -30,25 +30,25 @@ export function Scene({ reducedMotion = false }) {
       {/* Iluminación analítica con dirección y temperatura: funciona aunque el
           HDRI no cargue. Key cálida (sol) + relleno frío opuesto que modela las
           formas low-poly; ambiente bajo para conservar contraste. */}
-      <hemisphereLight args={['#dcebff', '#9dbe7a', 0.5]} />
-      <ambientLight intensity={0.18} />
+      <hemisphereLight args={['#f4ead6', '#a4bf86', 0.44]} />
+      <ambientLight intensity={0.16} color="#ffe7cb" />
       <directionalLight
         ref={keyLight}
-        position={[14, 20, 8]}
+        position={[16, 13, 7]}
         intensity={1.7}
         color="#fff1d4"
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0005}
         shadow-camera-near={1}
-        shadow-camera-far={70}
-        shadow-camera-left={-30}
-        shadow-camera-right={30}
-        shadow-camera-top={30}
-        shadow-camera-bottom={-30}
+        shadow-camera-far={82}
+        shadow-camera-left={-34}
+        shadow-camera-right={34}
+        shadow-camera-top={34}
+        shadow-camera-bottom={-34}
       />
       {/* Relleno frío desde el lado opuesto: separa las siluetas del fondo */}
-      <directionalLight position={[-12, 9, -10]} intensity={0.45} color="#bcd7ff" />
+      <directionalLight position={[-12, 9, -10]} intensity={0.38} color="#bcd7ff" />
 
       {/* Iluminación basada en imagen para reflejos suaves; si la red no la
           entrega, la escena ya está iluminada y esto simplemente no aparece. */}
