@@ -2,6 +2,7 @@ import React, { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { playerPos, playerMotion } from './playerState'
+import { sampleHeight } from './terrain'
 
 // Rastro de huellas que el avatar deja al caminar y se desvanecen (idea del folio
 // de Bruno Simon, que deja marcas/rodadas en el suelo). Es un pool de manchas
@@ -11,7 +12,7 @@ import { playerPos, playerMotion } from './playerState'
 const COUNT = 22
 const STEP_DIST = 0.8 // distancia entre huellas
 const LIFE = 4.5 // segundos hasta desvanecerse
-const GROUND_Y = 0.73
+const PRINT_LIFT = 0.03 // apenas sobre el suelo para no hacer z-fighting
 const MAX_OPACITY = 0.5
 const FOOT_OFFSET = 0.22 // separación lateral izquierda/derecha
 
@@ -34,7 +35,7 @@ export function FootTrail({ reducedMotion = false }) {
   const tex = useMemo(footTexture, [])
   const refs = useRef([])
   const prints = useMemo(
-    () => Array.from({ length: COUNT }, () => ({ age: Infinity, x: 0, z: 0, rot: 0, scl: 1 })),
+    () => Array.from({ length: COUNT }, () => ({ age: Infinity, x: 0, y: 0, z: 0, rot: 0, scl: 1 })),
     []
   )
   // Estado de emisión: último punto donde estampamos, distancia acumulada,
@@ -70,6 +71,7 @@ export function FootTrail({ reducedMotion = false }) {
         e.next = (e.next + 1) % COUNT
         p.x = px + perpx * FOOT_OFFSET * side
         p.z = pz + perpz * FOOT_OFFSET * side
+        p.y = sampleHeight(p.x, p.z) + PRINT_LIFT
         p.rot = Math.atan2(e.dirx, e.dirz)
         p.scl = 0.42 + Math.random() * 0.08
         p.age = 0
@@ -95,7 +97,7 @@ export function FootTrail({ reducedMotion = false }) {
         continue
       }
       m.visible = true
-      m.position.set(p.x, GROUND_Y, p.z)
+      m.position.set(p.x, p.y, p.z)
       m.rotation.set(-Math.PI / 2, 0, p.rot)
       // Aparece nítida y se desvanece encogiendo un poco al final.
       m.material.opacity = MAX_OPACITY * (1 - k) * Math.min(p.age * 6, 1)

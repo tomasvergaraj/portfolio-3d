@@ -9,7 +9,6 @@ import { sampleWind } from './wind'
 // variantes (macizos y flores sueltas) que comparten un único material; cada
 // variante se dibuja como un InstancedMesh (barato: ~1 draw call por variante).
 const URL = '/Flowers.glb'
-const GROUND_Y = 0.72
 const TARGET_H = 0.5 // altura objetivo de cada flor/macizo en el mundo
 const _o = new THREE.Object3D()
 
@@ -68,7 +67,7 @@ function VariantInstances({ variant, group }) {
     if (!m) return
     for (let i = 0; i < group.length; i++) {
       const it = group[i]
-      _o.position.set(it.position[0], GROUND_Y, it.position[2])
+      _o.position.set(it.position[0], it.position[1], it.position[2])
       _o.rotation.set(0, it.rot, 0)
       _o.scale.setScalar(it.scale)
       _o.updateMatrix()
@@ -91,7 +90,7 @@ function VariantInstances({ variant, group }) {
       const proj = it.position[0] * w.dirX + it.position[2] * w.dirZ
       const wave = Math.sin(t * 1.9 - proj * 0.4 + it.rot) * 0.045 * (0.5 + w.strength)
       const k = lean + wave
-      _o.position.set(it.position[0], GROUND_Y, it.position[2])
+      _o.position.set(it.position[0], it.position[1], it.position[2])
       _o.rotation.set(-w.dirZ * k, it.rot, w.dirX * k)
       _o.scale.setScalar(it.scale)
       _o.updateMatrix()

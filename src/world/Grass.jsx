@@ -9,7 +9,6 @@ import { sampleWind } from './wind'
 // mecen con el viento y se inclinan apartándose cuando el personaje pasa cerca
 // (idea tomada del folio de Bruno Simon).
 const GRASS_URL = '/grass2.obj'
-const GROUND_Y = 0.72
 const GRASS_H = 0.55
 const BEND_RADIUS = 2.4 // distancia a la que el pasto reacciona al personaje
 const BEND_MAX = 0.8 // inclinación máxima (rad)
@@ -113,7 +112,7 @@ export function Grass({ items }) {
         // Exterior: posición + escala (sin giro, para que la inclinación use ejes
         // de mundo). Intermedio (ref): inclinación viento/personaje. Interior:
         // giro propio de la mata.
-        <group key={i} position={[it.position[0], GROUND_Y, it.position[2]]} scale={baseScale * it.scale}>
+        <group key={i} position={[it.position[0], it.position[1], it.position[2]]} scale={baseScale * it.scale}>
           <group ref={(el) => (refs.current[i] = el)}>
             <primitive object={clones[i]} rotation={[0, it.rot, 0]} position={[0, baseLift, 0]} />
           </group>

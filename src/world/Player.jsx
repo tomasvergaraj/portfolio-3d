@@ -8,6 +8,7 @@ import { AvatarModel, AVATAR_MODEL_URL } from './AvatarModel'
 import { DogModel, DOG_MODEL_URL } from './DogModel'
 import { ModelBoundary } from './ModelBoundary'
 import { playerPos, playerMotion } from './playerState'
+import { sampleHeight } from './terrain'
 
 const SPEED = 6.4
 const SPRINT_MULT = 1.85 // velocidad al correr (Shift / joystick a fondo)
@@ -234,6 +235,10 @@ export function Player({ reducedMotion = false }) {
       g.position.x *= CLAMP_R / r
       g.position.z *= CLAMP_R / r
     }
+    // Asienta el avatar sobre el relieve: el grupo sigue la altura del terreno
+    // (las lomas) y el salto lo añade aparte el cuerpo (bodyRef + jumpY), así
+    // pose y altura van alineadas tanto en plano como en cuesta.
+    g.position.y = sampleHeight(g.position.x, g.position.z) - 0.2
     // Salto: en el flanco de pulsación de espacio (y si no está ya saltando) avisamos
     // al avatar con un nuevo jumpId; él reproduce el clip y reconstruye la altura.
     if (jumpHeld && !prevJump.current && !playerMotion.jumping && !frozen) playerMotion.jumpId++
@@ -300,14 +305,15 @@ export function Player({ reducedMotion = false }) {
         dog.rotation.y = lerpAngle(dog.rotation.y, dtar, 0.25)
       }
       // Con el modelo animado el balanceo lo da su ciclo de marcha: lo dejamos
-      // pegado al suelo. Con el perro de primitivas mantenemos el galope manual.
+      // pegado al relieve. Con el perro de primitivas mantenemos el galope manual.
+      const dogGround = sampleHeight(dog.position.x, dog.position.z)
       if (USE_DOG_MODEL) {
-        dog.position.y = GROUND_Y
+        dog.position.y = dogGround
       } else {
         const running = step > 0.004
         dogGait.current += step * (sprint ? 11 : 7)
         const amp = sprint ? 0.34 : 0.16
-        dog.position.y = GROUND_Y + (running ? Math.abs(Math.sin(dogGait.current)) * amp : 0)
+        dog.position.y = dogGround + (running ? Math.abs(Math.sin(dogGait.current)) * amp : 0)
       }
     }
 

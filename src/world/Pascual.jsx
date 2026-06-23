@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useMemo, useLayoutEffect } from 'react'
 import { useFBX, useAnimations } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { sampleHeight } from './terrain'
 
 // "Pascual": un gato que deambula por la isla con su animación de caminar REAL.
 // Aparece en posición aleatoria, elige destinos al azar, camina hacia ellos (clip
@@ -9,7 +10,6 @@ import * as THREE from 'three'
 // neutra), repitiendo. Se carga desde FBX porque el rig de la versión glTF se
 // desarmaba al animar; el FBXLoader de three sí lo reproduce bien.
 const URL = '/pascual_walk2.fbx'
-const GROUND_Y = 0.72
 const TARGET_H = 1.1 // alto objetivo del gato (auto-escala desde el bbox)
 const FACE_OFFSET = 0 // el modelo ya mira a +z = la dirección de avance (verificado)
 
@@ -71,7 +71,9 @@ export function Pascual() {
     // Aparición en posición aleatoria del mapa, mirando hacia un lado al azar.
     const ang = Math.random() * Math.PI * 2
     const r = WANDER_MIN + Math.random() * (WANDER_MAX - WANDER_MIN)
-    group.current?.position.set(Math.cos(ang) * r, GROUND_Y, Math.sin(ang) * r)
+    const sx = Math.cos(ang) * r
+    const sz = Math.sin(ang) * r
+    group.current?.position.set(sx, sampleHeight(sx, sz), sz)
     if (group.current) group.current.rotation.y = Math.random() * Math.PI * 2
     st.current.timer = 0.5 + Math.random() * 1.5 // breve pausa inicial
     return () => a?.stop()
@@ -83,6 +85,9 @@ export function Pascual() {
     if (!g) return
     const d = Math.min(dt, 0.05)
     const s = st.current
+
+    // Asienta al gato sobre el relieve (sigue las lomas mientras deambula).
+    g.position.y = sampleHeight(g.position.x, g.position.z)
 
     if (s.mode === 'pause') {
       if (a && s.walking) {

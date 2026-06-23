@@ -8,6 +8,7 @@ import { ModelBoundary } from './ModelBoundary'
 import { Grass } from './Grass'
 import { Flowers, FLOWER_COLOR_COUNT } from './Flowers'
 import { WildFlowers } from './WildFlowers'
+import { sampleHeight } from './terrain'
 
 const TREE_URLS = ['/Tree.glb', '/Tree2.glb']
 const ROCK_URL = '/Resource_Rock_1.fbx'
@@ -152,7 +153,7 @@ export function Scenery() {
         if (onPath(x, z)) continue
         if (Math.hypot(x, z) < 6) continue
         trees.push({
-          position: [x, 0, z],
+          position: [x, sampleHeight(x, z), z],
           scale: 0.8 + rnd() * 0.5,
           rot: rnd() * Math.PI * 2,
           url: TREE_URLS[rnd() < 0.5 ? 0 : 1],
@@ -174,7 +175,7 @@ export function Scenery() {
         if (onPath(x, z)) continue
         if (!farFromStations(x, z, 3.6)) continue
         if (Math.hypot(x, z) < 5) continue
-        rocks.push({ position: [x, 0, z], scale: 0.6 + rnd() * 0.9, rot: rnd() * Math.PI * 2 })
+        rocks.push({ position: [x, sampleHeight(x, z), z], scale: 0.6 + rnd() * 0.9, rot: rnd() * Math.PI * 2 })
         break
       }
     }
@@ -192,7 +193,7 @@ export function Scenery() {
       if (Math.hypot(x, z) < 4) continue
       if (!farFromStations(x, z, 2.6)) continue
       grass.push({
-        position: [x, 0, z],
+        position: [x, sampleHeight(x, z), z],
         scale: 0.7 + rnd() * 0.7,
         rot: rnd() * Math.PI * 2,
         phase: rnd() * Math.PI * 2,
@@ -212,7 +213,7 @@ export function Scenery() {
       if (Math.hypot(x, z) < 4) continue
       if (!farFromStations(x, z, 2.4)) continue
       flowers.push({
-        position: [x, 0, z],
+        position: [x, sampleHeight(x, z), z],
         rot: rnd() * Math.PI * 2,
         v: Math.floor(rnd() * 7), // variante del modelo Flowers.glb (7 mallas)
         scale: 0.7 + rnd() * 0.6, // escala del modelo (alto ~0.35–0.65)
@@ -247,7 +248,7 @@ export function Scenery() {
       <ModelBoundary fallback={proceduralTrees}>
         <Suspense fallback={proceduralTrees}>
           {trees.map((t, i) => (
-            <Instance key={`t${i}`} url={t.url} position={t.position} targetH={TREE_H} scaleMul={t.scale} rot={t.rot} sway={0.05} />
+            <Instance key={`t${i}`} url={t.url} position={t.position} targetH={TREE_H} scaleMul={t.scale} rot={t.rot} sway={0.05} groundY={t.position[1]} />
           ))}
         </Suspense>
       </ModelBoundary>
@@ -256,7 +257,7 @@ export function Scenery() {
       <ModelBoundary fallback={proceduralRocks}>
         <Suspense fallback={proceduralRocks}>
           {rocks.map((r, i) => (
-            <Instance key={`r${i}`} url={ROCK_URL} position={r.position} targetH={ROCK_H} scaleMul={r.scale} rot={r.rot} />
+            <Instance key={`r${i}`} url={ROCK_URL} position={r.position} targetH={ROCK_H} scaleMul={r.scale} rot={r.rot} groundY={r.position[1]} />
           ))}
         </Suspense>
       </ModelBoundary>

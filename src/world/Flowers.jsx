@@ -5,7 +5,8 @@ import * as THREE from 'three'
 // salpican el pasto y le dan vida y variedad cromática (la isla era muy
 // monocromáticamente verde). Un único instancedMesh con color por instancia, así
 // que es barato (una draw call). Estáticas: no necesitan animación propia.
-const GROUND_Y = 0.78
+// Pequeño levante sobre el suelo para que el capullo no se hunda en el pasto.
+const LIFT = 0.06
 const COLORS = ['#f2789f', '#ffd23f', '#ffffff', '#b08be6', '#ff7a59', '#7ec8ff']
 const _o = new THREE.Object3D()
 const _c = new THREE.Color()
@@ -18,7 +19,7 @@ export function Flowers({ items }) {
     if (!m) return
     for (let i = 0; i < items.length; i++) {
       const f = items[i]
-      _o.position.set(f.position[0], GROUND_Y + f.h, f.position[2])
+      _o.position.set(f.position[0], f.position[1] + LIFT + f.h, f.position[2])
       _o.rotation.set(0, f.rot, 0)
       _o.scale.set(f.s, f.s * 0.7, f.s) // capullo ligeramente achatado
       _o.updateMatrix()

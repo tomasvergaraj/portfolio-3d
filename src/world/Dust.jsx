@@ -3,11 +3,11 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { playerPos, playerMotion } from './playerState'
 import { sampleWind } from './wind'
+import { sampleHeight } from './terrain'
 
 // Polvo bajo el personaje al caminar/correr: pequeñas motas que suben, crecen y
 // se desvanecen. Más frecuentes al hacer sprint. Da peso y velocidad al avance.
 const COUNT = 32
-const GROUND_Y = 0.74
 const _d = new THREE.Object3D()
 
 function softTexture() {
@@ -39,6 +39,8 @@ export function Dust() {
     if (!m) return
     const d = Math.min(dt, 0.05)
     const w = sampleWind(state.clock.elapsedTime)
+    // Altura del suelo bajo los pies (sigue el relieve del terreno).
+    const gy = sampleHeight(playerPos.x, playerPos.z)
 
     // Aterrizaje: al pasar de saltando a no-saltando, suelta un anillo de polvo
     // que sale disparado hacia afuera bajo los pies (impacto).
@@ -52,7 +54,7 @@ export function Dust() {
         p.life = p.max = 0.6
         p.x = playerPos.x + Math.cos(a) * r
         p.z = playerPos.z + Math.sin(a) * r
-        p.y = GROUND_Y
+        p.y = gy
         p.vy = 0.12 + Math.random() * 0.22
         p.scale = 0.22 + Math.random() * 0.18
         p.dir = a
@@ -74,7 +76,7 @@ export function Dust() {
           const r = 0.1 + Math.random() * 0.25
           p.x = playerPos.x + Math.cos(a) * r
           p.z = playerPos.z + Math.sin(a) * r
-          p.y = GROUND_Y
+          p.y = gy
           p.vy = 0.25 + Math.random() * 0.4
           p.scale = 0.16 + Math.random() * 0.16
           p.dir = a
