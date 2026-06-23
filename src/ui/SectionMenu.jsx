@@ -25,6 +25,7 @@ export function SectionMenu({ openMenu, setOpenMenu, onPick }) {
             role="dialog"
             aria-label="Secciones del portafolio"
           >
+            <p className="ov-eyebrow">Secciones</p>
             <h3>Ir directo a una sección</h3>
             <p className="sub">¿Sin ganas de recorrer la isla? Salta a donde quieras.</p>
             <div className="sheet-list">

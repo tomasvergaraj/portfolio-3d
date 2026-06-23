@@ -83,7 +83,19 @@ Screenshots antes/después en `screenshots/iterN-*` (ignorados por git).
 - **Cambio:** nuevo `src/ui/Achievements.jsx` — botón-trofeo en la barra superior (junto al brand) que muestra `N/5` siempre visible y, al pulsarlo, despliega un panel con el logro "Explorador", barra de progreso y checklist de las 5 secciones (visitadas con color + ✓, pendientes atenuadas). Al completar, el trofeo y la medalla se vuelven dorados. Wireado en `src/ui/Hud.jsx` (nuevo `.topbar-left`); estilos `.ach-btn`/`.ach-pop`/`.ach-list` en `src/styles.css`. El toast + confeti + fanfarria de la iter 107 se conservan.
 - **Efecto:** el progreso es visible desde la primera sección; el panel lista qué falta. Verificado por Playwright en escritorio (0/5, 2/5, 5/5 dorado + toast + popover) y en ancho de móvil (390px) sin desbordar el topbar.
 
+## Iteración 109 — Menús profesionales (no-IA): iconos de marca, CV, contacto como el 2D
+- **Pedido:** que cada menú/sección se vea profesional (no "de IA"); iconos SVG oficiales para apps externas; CV descargable; sección de contacto parecida al portafolio 2D (mismo dueño/marca, a conectar a futuro).
+- **Proceso:** workflow de diseño (5 specs senior por área + síntesis) → implementación coherente → workflow de revisión adversarial (3 dimensiones × verificación; 6/20 hallazgos confirmados y aplicados).
+- **Cambios:**
+  - `src/ui/BrandIcon.jsx` (NUEVO): iconos centralizados. Logos OFICIALES (GitHub, LinkedIn, Instagram, WhatsApp) + line-icons sobrios (mail, phone, mappin, download, close, flechas). Cero emojis/glifos. `<title>`/`aria` por icono.
+  - `src/data/stations.jsx`: Contacto reescrito a dos columnas (Datos directos + Redes con iconos de marca + Descargar CV | formulario controlado con mailto, listo para EmailJS); constante `CONTACT`; Sobre mí + bloque "¿Conversamos?" con CV; Stack Docker como `.lead`. Form con `aria-live`/`aria-busy`.
+  - `src/styles.css`: layout y estilos de contacto/formulario (`.contact-*`, `.form-*`, `.btn-submit`, `.spinner`, `.cta-section`, `.btn-secondary`); foco de campo reforzado + placeholder a contraste AA; `.exp .org` con énfasis; `.sheet` con jerarquía eyebrow→título→lead; scrollbar hover; `@media 900px` y 560px. Eliminados `.contact-grid`/`.cta-card*`.
+  - `src/ui/StationPanel.jsx`: cerrar (✕→SVG) y volver (←→SVG), botón cerrar 44px. `src/ui/SectionMenu.jsx`: eyebrow "Secciones".
+  - CV servido desde `/CV_Tomas_Vergara_FullStack.pdf` (Contacto + Sobre mí). Jerarquía de CTAs: "Enviar mensaje" primario (ink), WhatsApp secundario (outline).
+- **Verificado:** Playwright (contacto/sobre/experiencia/proyectos/stack/menú) sin errores de consola; iconos de marca renderizan; responsive a 900/560px.
+- **Aparte:** el CV definitivo también se subió al repo 2D (`tomasvergaraj/portfolio`, `public/CV.pdf`) y a GitHub.
+
 ---
-**Nota:** la bitácora real continúa en los commits `iter N` de git (vamos en iter 108); esta lista quedó detallada hasta la 13.
+**Nota:** la bitácora real continúa en los commits `iter N` de git (vamos en iter 109); esta lista quedó detallada hasta la 13.
 
 **Estado del loop:** 12 iteraciones completadas. Visual: cielo, luz, sombras de contacto, agua, atmósfera. Jugabilidad/bugs: avatar y mascota asentados sobre el suelo, sprint con Shift y con joystick a fondo, mascota mirando hacia donde avanza, mascota que galopa al correr, etiquetas 2D ocultas con el modal, cámara cinematográfica al entrar/salir de secciones. **Pendiente que requiere asset externo:** cambiar el avatar de primitivas por un modelo `.glb` riggeado (Mixamo) — el proxy bloquea descargas, así que el usuario debe aportar el archivo en `public/`. También opcional: HDRI local para reflejos sin depender del CDN.

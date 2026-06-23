@@ -2,6 +2,7 @@ import React from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useStore } from '../store'
 import { STATIONS } from '../data/stations'
+import { BrandIcon } from './BrandIcon'
 
 // Cada estación entra con una transformación distinta.
 const VARIANTS = {
@@ -62,7 +63,7 @@ export function StationPanel() {
               aria-label={station.name}
             >
               <button className="overlay-close" onClick={close} aria-label="Cerrar">
-                ✕
+                <BrandIcon id="close" size={20} strokeWidth={2} />
               </button>
 
               <motion.div
@@ -72,7 +73,8 @@ export function StationPanel() {
               >
                 <station.Content />
                 <button className="overlay-back" onClick={close}>
-                  ← Volver al mundo
+                  <BrandIcon id="arrow-left" size={18} />
+                  Volver al mundo
                 </button>
               </motion.div>
             </motion.div>

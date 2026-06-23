@@ -1,4 +1,86 @@
 import React from 'react'
+import { BrandIcon } from '../ui/BrandIcon'
+
+// Datos de contacto reutilizados (alineados con el portafolio 2D, misma marca).
+export const CONTACT = {
+  email: 'contacto@nexosoftware.cl',
+  phoneDisplay: '+56 9 8196 4119',
+  phoneHref: 'tel:+56981964119',
+  location: 'Quillota, Chile',
+  whatsapp: 'https://wa.me/56981964119',
+  github: 'https://github.com/tomasvergaraj',
+  linkedin: 'https://www.linkedin.com/in/tomasvergaraj/',
+  instagram: 'https://www.instagram.com/tomasvergar4/',
+  cv: '/CV_Tomas_Vergara_FullStack.pdf',
+}
+
+// Formulario de contacto controlado. Sin dependencias: envía abriendo el cliente
+// de correo con un borrador pre-rellenado (mailto). El JSX queda listo para
+// enchufar EmailJS más adelante (leyendo import.meta.env.VITE_EMAILJS_*) sin
+// rehacer la maquetación. Réplica del Contact.tsx del portafolio 2D.
+function ContactForm() {
+  const [form, setForm] = React.useState({ name: '', email: '', subject: '', message: '' })
+  const [status, setStatus] = React.useState('idle') // idle | sending | sent
+  const onChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
+
+  const onSubmit = (e) => {
+    e.preventDefault()
+    setStatus('sending')
+    const subject = form.subject || `Contacto desde el portafolio — ${form.name || 'sin nombre'}`
+    const body =
+      `Nombre: ${form.name}\n` +
+      `Email: ${form.email}\n\n` +
+      `${form.message}`
+    // Abre el cliente de correo con el mensaje listo (sin backend).
+    window.location.href =
+      `mailto:${CONTACT.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    setStatus('sent')
+    setTimeout(() => setStatus('idle'), 6000)
+  }
+
+  return (
+    <form className="contact-form" onSubmit={onSubmit}>
+      <div className="form-row">
+        <div className="form-group">
+          <label className="form-label" htmlFor="cf-name">Nombre</label>
+          <input id="cf-name" name="name" className="form-field" value={form.name} onChange={onChange} required placeholder="Tu nombre" autoComplete="name" />
+        </div>
+        <div className="form-group">
+          <label className="form-label" htmlFor="cf-email">Email</label>
+          <input id="cf-email" name="email" type="email" className="form-field" value={form.email} onChange={onChange} required placeholder="tu@email.com" autoComplete="email" />
+        </div>
+      </div>
+      <div className="form-group">
+        <label className="form-label" htmlFor="cf-subject">Asunto</label>
+        <input id="cf-subject" name="subject" className="form-field" value={form.subject} onChange={onChange} placeholder="¿De qué quieres hablar?" />
+      </div>
+      <div className="form-group">
+        <label className="form-label" htmlFor="cf-message">Mensaje</label>
+        <textarea id="cf-message" name="message" className="form-field" value={form.message} onChange={onChange} required rows={5} placeholder="Cuéntame sobre tu proyecto..." />
+      </div>
+
+      <div aria-live="polite">
+        {status === 'sent' && (
+          <p className="form-status success">Te abrí tu cliente de correo con el mensaje listo. Si no se abrió, escríbeme a {CONTACT.email}.</p>
+        )}
+      </div>
+
+      <button type="submit" className="btn-submit" disabled={status === 'sending'} aria-busy={status === 'sending'}>
+        {status === 'sending' ? (
+          <>
+            <span className="spinner" aria-hidden="true" />
+            Enviando
+          </>
+        ) : (
+          <>
+            Enviar mensaje
+            <BrandIcon id="arrow-up-right" size={16} color="#fff" />
+          </>
+        )}
+      </button>
+    </form>
+  )
+}
 
 // Cada estación combina su metadato para el mundo 3D (posición en el anillo,
 // color del faro, tipo de monumento, variante de animación de entrada) con el
@@ -78,6 +160,17 @@ export const STATIONS = [
             <div className="k">Disponible</div>
             <div className="v">Remoto</div>
           </div>
+        </div>
+
+        <div className="cta-section">
+          <div>
+            <h2 className="cta-title">¿Conversamos?</h2>
+            <p className="cta-text">Descarga mi CV o escríbeme directamente.</p>
+          </div>
+          <a className="contact-cv-button" href={CONTACT.cv} download="CV-Tomas-Vergara.pdf">
+            <BrandIcon id="download" size={16} />
+            Descargar CV
+          </a>
         </div>
       </>
     ),
@@ -305,7 +398,7 @@ export const STATIONS = [
           <div className="stack-col">
             <h4>Infraestructura</h4>
             <div className="chips">
-              <span className="chip">Docker</span>
+              <span className="chip lead">Docker</span>
               <span className="chip">Vercel</span>
               <span className="chip">VPS Linux</span>
               <span className="chip">Cloudflare</span>
@@ -396,52 +489,86 @@ export const STATIONS = [
       <>
         <p className="ov-eyebrow">Contacto</p>
         <h1 className="ov-title">Conversemos sobre tu proyecto.</h1>
-        <p className="ov-lead" style={{ marginBottom: 28 }}>
-          ¿Tienes una idea o necesitas software a medida? Respondo rápido. Cuéntame qué necesitas y
-          vemos cómo lo armamos.
+        <p className="ov-lead" style={{ marginBottom: 32 }}>
+          ¿Tienes una idea o necesitas software a medida? Escríbeme directamente o cotiza con{' '}
+          <a
+            className="lead-link"
+            href="https://nexosoftware.cl/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Nexo Software
+          </a>
+          .
         </p>
-        <div className="contact-grid">
-          <a className="cta-card" href="mailto:contacto@nexosoftware.cl">
-            <span className="ci">✉</span>
-            <span>
-              <span className="ck">Correo</span>
-              <span className="cv">contacto@nexosoftware.cl</span>
-            </span>
-          </a>
-          <a className="cta-card" href="https://github.com/tomasvergaraj" target="_blank" rel="noopener noreferrer">
-            <span className="ci">⌥</span>
-            <span>
-              <span className="ck">GitHub</span>
-              <span className="cv">@tomasvergaraj</span>
-            </span>
-          </a>
-          <a className="cta-card" href="https://www.linkedin.com/in/tomasvergaraj/" target="_blank" rel="noopener noreferrer">
-            <span className="ci">in</span>
-            <span>
-              <span className="ck">LinkedIn</span>
-              <span className="cv">in/tomasvergaraj</span>
-            </span>
-          </a>
-          <a className="cta-card" href="https://www.instagram.com/tomasvergar4/" target="_blank" rel="noopener noreferrer">
-            <span className="ci">◐</span>
-            <span>
-              <span className="ck">Instagram</span>
-              <span className="cv">@tomasvergar4</span>
-            </span>
-          </a>
-          <a className="cta-card" href="https://portfolio-tvj.vercel.app/" target="_blank" rel="noopener noreferrer">
-            <span className="ci">◆</span>
-            <span>
-              <span className="ck">Portafolio</span>
-              <span className="cv">portfolio-tvj.vercel.app</span>
-            </span>
-          </a>
-        </div>
-        <div className="contact-line">
-          <a className="btn-primary" href="https://wa.me/56981964119" target="_blank" rel="noopener noreferrer">
-            Escribir por WhatsApp →
-          </a>
-          <span className="contact-note">Primera conversación sin costo · respondo hoy.</span>
+
+        <div className="contact-wrapper">
+          {/* Izquierda: datos directos + redes + CV */}
+          <div className="contact-left">
+            <div className="contact-section">
+              <p className="contact-section-label">Datos directos</p>
+              <ul className="contact-info-list">
+                <li className="contact-info-item">
+                  <span className="contact-info-icon"><BrandIcon id="mail" size={18} /></span>
+                  <span>
+                    <span className="contact-info-label">Correo</span>
+                    <a className="contact-info-value" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
+                  </span>
+                </li>
+                <li className="contact-info-item">
+                  <span className="contact-info-icon"><BrandIcon id="phone" size={18} /></span>
+                  <span>
+                    <span className="contact-info-label">Teléfono</span>
+                    <a className="contact-info-value" href={CONTACT.phoneHref}>{CONTACT.phoneDisplay}</a>
+                  </span>
+                </li>
+                <li className="contact-info-item">
+                  <span className="contact-info-icon"><BrandIcon id="mappin" size={18} /></span>
+                  <span>
+                    <span className="contact-info-label">Ubicación</span>
+                    <span className="contact-info-value">{CONTACT.location}</span>
+                  </span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="contact-section">
+              <p className="contact-section-label">Redes</p>
+              <div className="contact-socials">
+                <a className="contact-social-link" href={CONTACT.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                  <BrandIcon id="github" size={20} />
+                </a>
+                <a className="contact-social-link" href={CONTACT.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                  <BrandIcon id="linkedin" size={20} />
+                </a>
+                <a className="contact-social-link" href={CONTACT.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                  <BrandIcon id="instagram" size={20} />
+                </a>
+                <a className="contact-social-link" href={CONTACT.whatsapp} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+                  <BrandIcon id="whatsapp" size={20} />
+                </a>
+              </div>
+            </div>
+
+            <div className="contact-section">
+              <a className="contact-cv-button" href={CONTACT.cv} download="CV-Tomas-Vergara.pdf">
+                <BrandIcon id="download" size={16} />
+                Descargar CV
+              </a>
+            </div>
+          </div>
+
+          {/* Derecha: formulario */}
+          <div className="contact-right">
+            <ContactForm />
+            <div className="contact-line">
+              <a className="btn-secondary" href={CONTACT.whatsapp} target="_blank" rel="noopener noreferrer">
+                <BrandIcon id="whatsapp" size={18} />
+                Escribir por WhatsApp
+              </a>
+              <span className="contact-note">Primera conversación sin costo · respondo hoy.</span>
+            </div>
+          </div>
         </div>
       </>
     ),
