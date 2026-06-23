@@ -1,10 +1,15 @@
 import React, { useRef, useState, Suspense } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html, Float } from '@react-three/drei'
+import * as THREE from 'three'
 import { useStore } from '../store'
 import { StationModel, hasStationModel } from './StationModel'
 import { ModelBoundary } from './ModelBoundary'
 import { StationIcon } from './StationIcon'
+
+// Altura del faro sobre el suelo de la estación (para medir distancia a cámara).
+const BEACON_Y = 4.4
+const _beaconPos = new THREE.Vector3()
 
 // ---- Monumentos por tipo -------------------------------------------------
 
@@ -95,6 +100,7 @@ function Monument({ kind, color }) {
 export function StationMarker({ station, position }) {
   const beaconRef = useRef()
   const lightRef = useRef()
+  const beamRef = useRef()
   const monRef = useRef()
   const [hovered, setHovered] = useState(false)
   const nearby = useStore((s) => s.nearby === station.id)
@@ -108,13 +114,22 @@ export function StationMarker({ station, position }) {
     const t = state.clock.elapsedTime
     const pulse = 0.5 + Math.sin(t * 2 + station.angle) * 0.5
     const focus = hovered || nearby
+    // Atenuación por cercanía a cámara: el faro que queda en primer plano no debe
+    // reventar de bloom y robar el foco; los lejanos siguen brillando para guiar.
+    // nearK ≈ 0.4 pegado a la cámara → 1.0 a media isla de distancia.
+    _beaconPos.set(position[0], BEACON_Y, position[2])
+    const camDist = state.camera.position.distanceTo(_beaconPos)
+    const nearK = 0.4 + 0.6 * THREE.MathUtils.smoothstep(camDist, 12, 27)
     if (beaconRef.current) {
-      beaconRef.current.material.emissiveIntensity = 1.4 + pulse * 1.6 + (focus ? 1.6 : 0)
+      beaconRef.current.material.emissiveIntensity = (1.25 + pulse * 1.25 + (focus ? 1.5 : 0)) * nearK
       const s = 1 + pulse * 0.12 + (focus ? 0.18 : 0)
       beaconRef.current.scale.setScalar(s)
     }
     if (lightRef.current) {
-      lightRef.current.intensity = 2 + pulse * 2 + (focus ? 2 : 0)
+      lightRef.current.intensity = (1.7 + pulse * 1.7 + (focus ? 1.9 : 0)) * nearK
+    }
+    if (beamRef.current) {
+      beamRef.current.material.opacity = (0.14 + (focus ? 0.12 : 0)) * (0.55 + 0.45 * nearK)
     }
     // Monumento: rebote/escala al enfocar (hover o cercanía).
     if (monRef.current) {
@@ -169,9 +184,9 @@ export function StationMarker({ station, position }) {
       <pointLight ref={lightRef} position={[0, 4.4, 0]} color={station.color} distance={9} intensity={2} />
 
       {/* Haz vertical sutil */}
-      <mesh position={[0, 3, 0]}>
+      <mesh ref={beamRef} position={[0, 3, 0]}>
         <cylinderGeometry args={[0.05, 0.16, 2.6, 8]} />
-        <meshBasicMaterial color={station.color} transparent opacity={0.25} toneMapped={false} />
+        <meshBasicMaterial color={station.color} transparent opacity={0.18} toneMapped={false} />
       </mesh>
 
       {/* Etiqueta flotante (oculta mientras hay un panel abierto) */}
