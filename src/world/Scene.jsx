@@ -13,6 +13,7 @@ import { Player } from './Player'
 import { FootTrail } from './FootTrail'
 import { AudioReactor } from './AudioReactor'
 import { Pascual } from './Pascual'
+import { Bruna } from './Bruna'
 import { StationMarker } from './StationMarker'
 import { Effects } from './Effects'
 import { Leaves, DayNight, Butterflies, Fireflies, Birds } from './Ambiance'
@@ -103,10 +104,15 @@ export function Scene({ reducedMotion = false }) {
       <FootTrail reducedMotion={reducedMotion} />
       <AudioReactor />
 
-      {/* Pascual: NPC que deambula por la isla de forma aleatoria */}
+      {/* Mascotas que deambulan por la isla: Pascual (gato) y Bruna (perra) */}
       <ModelBoundary fallback={null}>
         <Suspense fallback={null}>
           <Pascual />
+        </Suspense>
+      </ModelBoundary>
+      <ModelBoundary fallback={null}>
+        <Suspense fallback={null}>
+          <Bruna />
         </Suspense>
       </ModelBoundary>
       <Dust />

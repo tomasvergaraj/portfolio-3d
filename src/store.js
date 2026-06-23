@@ -17,6 +17,8 @@ export const useStore = create((set, get) => ({
   ready: false,
   // contador de celebraciones (Konami): la ráfaga de confeti observa su cambio
   confettiN: 0,
+  // mascota enfocada por la cámara (zoom al hacer clic), o null
+  focusPet: null,
 
   setNearby: (id) => {
     if (get().nearby !== id) set({ nearby: id })
@@ -29,6 +31,10 @@ export const useStore = create((set, get) => ({
   setProgress: (p) => set({ progress: p }),
   setReady: () => set({ ready: true }),
   celebrate: () => set((s) => ({ confettiN: s.confettiN + 1 })),
+  setFocusPet: (id) => set({ focusPet: id }),
+  clearFocusPet: () => {
+    if (get().focusPet !== null) set({ focusPet: null })
+  },
 }))
 
 // En desarrollo, exponemos el store para que el script de captura (Playwright)

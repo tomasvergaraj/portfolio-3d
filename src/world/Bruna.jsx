@@ -1,5 +1,5 @@
-import React, { useRef, useState, useEffect, useMemo, useLayoutEffect } from 'react'
-import { useFBX, useAnimations } from '@react-three/drei'
+import React, { useRef, useState, useEffect, useLayoutEffect } from 'react'
+import { useGLTF, useAnimations } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { sampleHeight } from './terrain'
@@ -7,24 +7,26 @@ import { petPos } from './petState'
 import { useStore } from '../store'
 import { PetLabel } from './PetLabel'
 
-// "Pascual": un gato que deambula por la isla con su animación de caminar REAL.
-// Aparece en posición aleatoria, elige destinos al azar, camina hacia ellos (clip
-// de caminar activo) y al llegar se detiene un rato (clip en fade-out → pose
-// neutra), repitiendo. Al pasar el mouse muestra su nombre; al hacer clic la
-// cámara hace zoom hacia él.
-const URL = '/pascual_walk2.fbx'
-const TARGET_H = 1.1 // alto objetivo del gato (auto-escala desde el bbox)
-const FACE_OFFSET = 0 // el modelo ya mira a +z = la dirección de avance (verificado)
+// "Bruna": una perra que deambula por la isla con su animación de caminar real
+// (modelo antiguo dog_walk.glb). Mismo comportamiento errante que Pascual: elige
+// destinos al azar, camina hacia ellos y al llegar descansa, repitiendo. Al pasar
+// el mouse muestra su nombre; al hacer clic la cámara hace zoom hacia ella.
+const URL = '/dog_walk.glb'
+// El Armature del glb trae un scale interno de 0.01: el bbox del skinned mesh no
+// es fiable, así que la escala se fija a mano (valor afinado sobre el render).
+const SCALE = 320
+// El modelo mira a +x; restamos π/2 al rumbo para que el hocico apunte al avance.
+const FACE_OFFSET = Math.PI / 2
 
-const WALK_SPEED = 2.1 // u/s
-const ANIM_TS = 1.1 // velocidad del clip de caminar
-const WANDER_MIN = 4
-const WANDER_MAX = 16
-const ARRIVE = 0.6
-const TURN = 0.12
+const WALK_SPEED = 2.7 // u/s (trote de perro, algo más vivo que el gato)
+const ANIM_TS = 1.25 // velocidad del clip de caminar
+const WANDER_MIN = 5
+const WANDER_MAX = 17
+const ARRIVE = 0.7
+const TURN = 0.14
 const FADE = 0.25
-const PAUSE_MIN = 1.5
-const PAUSE_MAX = 4.5
+const PAUSE_MIN = 1.2
+const PAUSE_MAX = 4
 
 function lerpAngle(a, b, t) {
   let d = b - a
@@ -33,35 +35,26 @@ function lerpAngle(a, b, t) {
   return a + d * t
 }
 
-export function Pascual() {
+export function Bruna() {
   const group = useRef()
-  const fbx = useFBX(URL)
-  const { actions } = useAnimations(fbx.animations, group)
+  // Una sola instancia: escena directa (clonar un skinned mesh rompe el esqueleto).
+  const { scene, animations } = useGLTF(URL)
+  const { actions } = useAnimations(animations, group)
   const walk = useRef(null)
   const st = useRef({ mode: 'pause', tx: 0, tz: 0, timer: 1, walking: false })
   const [hovered, setHovered] = useState(false)
-  const focused = useStore((s) => s.focusPet === 'pascual')
+  const focused = useStore((s) => s.focusPet === 'bruna')
   const modalOpen = useStore((s) => s.active !== null)
 
-  // Auto-ajuste: escala a TARGET_H y apoya los pies en el suelo (bbox de bind).
-  const { scale, lift } = useMemo(() => {
-    fbx.updateWorldMatrix(true, true)
-    const box = new THREE.Box3().setFromObject(fbx)
-    const size = new THREE.Vector3()
-    box.getSize(size)
-    const s = TARGET_H / (size.y || 1)
-    return { scale: s, lift: -box.min.y }
-  }, [fbx])
-
   useLayoutEffect(() => {
-    fbx.traverse((o) => {
+    scene.traverse((o) => {
       if (o.isMesh || o.isSkinnedMesh) {
         o.castShadow = true
         o.receiveShadow = false
         o.frustumCulled = false
       }
     })
-  }, [fbx])
+  }, [scene])
 
   const pickTarget = () => {
     const ang = Math.random() * Math.PI * 2
@@ -74,14 +67,14 @@ export function Pascual() {
     const a = Object.values(actions)[0]
     walk.current = a
     a?.setLoop(THREE.LoopRepeat, Infinity)
-    // Aparición en posición aleatoria del mapa, mirando hacia un lado al azar.
+    // Aparece en un punto al azar (distinto del gato para que no nazcan juntos).
     const ang = Math.random() * Math.PI * 2
     const r = WANDER_MIN + Math.random() * (WANDER_MAX - WANDER_MIN)
     const sx = Math.cos(ang) * r
     const sz = Math.sin(ang) * r
     group.current?.position.set(sx, sampleHeight(sx, sz), sz)
     if (group.current) group.current.rotation.y = Math.random() * Math.PI * 2
-    st.current.timer = 0.5 + Math.random() * 1.5 // breve pausa inicial
+    st.current.timer = 0.6 + Math.random() * 1.6
     return () => a?.stop()
   }, [actions])
 
@@ -92,9 +85,9 @@ export function Pascual() {
     const d = Math.min(dt, 0.05)
     const s = st.current
 
-    // Asienta al gato sobre el relieve y comparte su posición (para el zoom).
+    // Asienta sobre el relieve y comparte su posición (para el zoom de cámara).
     g.position.y = sampleHeight(g.position.x, g.position.z)
-    petPos.pascual.copy(g.position)
+    petPos.bruna.copy(g.position)
 
     if (s.mode === 'pause') {
       if (a && s.walking) {
@@ -121,7 +114,7 @@ export function Pascual() {
     const nz = dz / dist
     g.position.x += nx * WALK_SPEED * d
     g.position.z += nz * WALK_SPEED * d
-    g.rotation.y = lerpAngle(g.rotation.y, Math.atan2(nx, nz) + FACE_OFFSET, TURN)
+    g.rotation.y = lerpAngle(g.rotation.y, Math.atan2(nx, nz) - Math.PI / 2, TURN)
     if (a && !s.walking) {
       a.reset().fadeIn(FADE).play()
       a.setEffectiveTimeScale(ANIM_TS)
@@ -143,15 +136,15 @@ export function Pascual() {
       }}
       onClick={(e) => {
         e.stopPropagation()
-        useStore.getState().setFocusPet('pascual')
+        useStore.getState().setFocusPet('bruna')
       }}
     >
-      <group scale={scale}>
-        <primitive object={fbx} position={[0, lift, 0]} rotation={[0, 0, 0]} />
+      <group scale={SCALE} rotation={[0, FACE_OFFSET, 0]}>
+        <primitive object={scene} />
       </group>
-      <PetLabel name="Pascual" show={(hovered || focused) && !modalOpen} />
+      <PetLabel name="Bruna" show={(hovered || focused) && !modalOpen} />
     </group>
   )
 }
 
-useFBX.preload(URL)
+useGLTF.preload(URL)

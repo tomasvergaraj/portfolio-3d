@@ -41,7 +41,11 @@ export default function App() {
         dpr={[1, 1.5]}
         camera={{ position: [0, 12.5, 22], fov: 42, near: 0.1, far: 220 }}
         gl={{ antialias: false, powerPreference: 'high-performance' }}
-        onPointerMissed={() => useStore.getState().close()}
+        onPointerMissed={() => {
+          const s = useStore.getState()
+          s.close()
+          s.clearFocusPet()
+        }}
       >
         <Suspense fallback={null}>
           <Scene reducedMotion={reduce} />
