@@ -18,7 +18,19 @@ const VALLEY = new THREE.Color('#9dbe7a')
 const HILLTOP = new THREE.Color('#c2d899')
 const SAND = new THREE.Color('#e0cfa0') // pasto que se seca al llegar a la playa
 const SAND_BEACH = '#e6d6b0' // arena de la orilla
+// Variación tonal del pasto por zonas (parches cálidos/fríos, como sol/sombra):
+// rompe el verde uniforme y le da riqueza sin texturas.
+const GRASS_WARM = new THREE.Color('#bcd083') // pasto soleado/seco
+const GRASS_COOL = new THREE.Color('#85a868') // pasto a la sombra/húmedo
 const _c = new THREE.Color()
+
+// Ruido suave de parches (baja frecuencia, determinista) para la variación tonal.
+function patchNoise(x, z) {
+  return (
+    Math.sin(x * 0.21 + 2.3) * Math.cos(z * 0.18 - 1.1) +
+    Math.sin((x - z) * 0.13 + 0.7) * 0.6
+  )
+}
 
 // Playa en pendiente: el pasto baja a SHORE_GRASS_Y en el rim y desde ahí una
 // arena desciende hasta meterse bajo el agua (BEACH_BOTTOM).
@@ -37,6 +49,11 @@ function buildGrassTop() {
     const r = Math.hypot(x, z)
     const h01 = Math.min(Math.max((y - TOP_Y) / AMP, 0), 1)
     _c.copy(VALLEY).lerp(HILLTOP, h01)
+    // Variación por zonas: parches cálidos (sol) y fríos (sombra) que rompen el
+    // verde plano. Sutil (≤24%) para que lea natural, no manchado.
+    const patch = Math.tanh(patchNoise(x, z) * 0.9) // -1..1
+    if (patch >= 0) _c.lerp(GRASS_WARM, patch * 0.24)
+    else _c.lerp(GRASS_COOL, -patch * 0.24)
     // Tinte arenoso hacia el borde (el pasto se "seca" al llegar a la playa).
     _c.lerp(SAND, THREE.MathUtils.smoothstep(r, 21, 24) * 0.85)
     colors.push(_c.r, _c.g, _c.b)
