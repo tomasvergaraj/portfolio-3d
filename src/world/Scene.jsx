@@ -10,6 +10,7 @@ import { FountainSpray } from './FountainSpray'
 import { Scenery } from './Scenery'
 import { Player } from './Player'
 import { FootTrail } from './FootTrail'
+import { AudioReactor } from './AudioReactor'
 import { Pascual } from './Pascual'
 import { StationMarker } from './StationMarker'
 import { Effects } from './Effects'
@@ -86,6 +87,7 @@ export function Scene({ reducedMotion = false }) {
 
       <Player reducedMotion={reducedMotion} />
       <FootTrail reducedMotion={reducedMotion} />
+      <AudioReactor />
 
       {/* Pascual: NPC que deambula por la isla de forma aleatoria */}
       <ModelBoundary fallback={null}>
