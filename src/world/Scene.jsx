@@ -16,6 +16,7 @@ import { Pascual } from './Pascual'
 import { StationMarker } from './StationMarker'
 import { Effects } from './Effects'
 import { Leaves, DayNight, Butterflies, Fireflies, Birds } from './Ambiance'
+import { Lanterns } from './Lanterns'
 import { Dust } from './Dust'
 import { STATIONS, stationPosition } from '../data/stations'
 
@@ -119,7 +120,12 @@ export function Scene({ reducedMotion = false }) {
       <Leaves reducedMotion={reducedMotion} />
       {!reducedMotion && <DayNight lightRef={keyLight} />}
 
-      {/* Criaturas ambientales (se congelan con prefers-reduced-motion) */}
+      {/* Faroles de la plaza: encienden con el atardecer (cohesión con el ciclo
+          día/noche, las luciérnagas y la hora dorada). Los postes son escenografía
+          siempre; la luz cálida sube con `dusk`. */}
+      <Lanterns />
+
+      {/* Criaturas ambientales (se ocultan con reduced-motion) */}
       {!reducedMotion && (
         <>
           <Butterflies />
