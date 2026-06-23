@@ -15,6 +15,8 @@ export const useStore = create((set, get) => ({
   // progreso de carga 0–100 y bandera de listo
   progress: 0,
   ready: false,
+  // contador de celebraciones (Konami): la ráfaga de confeti observa su cambio
+  confettiN: 0,
 
   setNearby: (id) => {
     if (get().nearby !== id) set({ nearby: id })
@@ -26,6 +28,7 @@ export const useStore = create((set, get) => ({
   toggle: (id) => set((s) => ({ active: s.active === id ? null : id })),
   setProgress: (p) => set({ progress: p }),
   setReady: () => set({ ready: true }),
+  celebrate: () => set((s) => ({ confettiN: s.confettiN + 1 })),
 }))
 
 // En desarrollo, exponemos el store para que el script de captura (Playwright)

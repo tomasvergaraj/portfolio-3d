@@ -17,6 +17,7 @@ import { StationMarker } from './StationMarker'
 import { Effects } from './Effects'
 import { Leaves, DayNight, Butterflies, Fireflies, Birds } from './Ambiance'
 import { Lanterns } from './Lanterns'
+import { Confetti } from './Confetti'
 import { Dust } from './Dust'
 import { STATIONS, stationPosition } from '../data/stations'
 
@@ -124,6 +125,9 @@ export function Scene({ reducedMotion = false }) {
           día/noche, las luciérnagas y la hora dorada). Los postes son escenografía
           siempre; la luz cálida sube con `dusk`. */}
       <Lanterns />
+
+      {/* Confeti del easter egg (Konami): inactivo salvo durante la ráfaga */}
+      <Confetti />
 
       {/* Criaturas ambientales (se ocultan con reduced-motion) */}
       {!reducedMotion && (

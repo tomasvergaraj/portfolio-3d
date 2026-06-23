@@ -10,12 +10,19 @@ import { Loader } from './ui/Loader'
 import { AudioToggle } from './ui/AudioToggle'
 import { Notification } from './ui/Notification'
 import { useKeyboard } from './controls/useKeyboard'
+import { useKonami } from './controls/useKonami'
 import { useDeepLinks } from './useDeepLinks'
+import { fanfare } from './audio/sound'
 import { useStore } from './store'
 
 export default function App() {
   useKeyboard()
   useDeepLinks()
+  // Easter egg: el código Konami suelta una ráfaga de confeti + fanfarria.
+  useKonami(() => {
+    useStore.getState().celebrate()
+    fanfare()
+  })
   const reduce = useReducedMotion()
   const [menu, setMenu] = useState(false)
   const openStation = useStore((s) => s.open)

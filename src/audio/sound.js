@@ -235,6 +235,27 @@ export function chord() {
   })
 }
 
+// Fanfarria de celebración (Konami): arpegio ascendente alegre.
+export function fanfare() {
+  if (!ctx || muted) return
+  const t = ctx.currentTime
+  const notes = [523.25, 659.25, 783.99, 1046.5] // C E G C
+  notes.forEach((f, i) => {
+    const o = ctx.createOscillator()
+    o.type = 'triangle'
+    const g = ctx.createGain()
+    o.frequency.value = f
+    const ts = t + i * 0.09
+    g.gain.setValueAtTime(0.0001, ts)
+    g.gain.linearRampToValueAtTime(0.09, ts + 0.02)
+    g.gain.exponentialRampToValueAtTime(0.0001, ts + 0.5)
+    o.connect(g)
+    g.connect(master)
+    o.start(ts)
+    o.stop(ts + 0.55)
+  })
+}
+
 export function setMuted(m) {
   muted = m
   if (master && ctx) master.gain.linearRampToValueAtTime(m ? 0 : VOL, ctx.currentTime + 0.12)
