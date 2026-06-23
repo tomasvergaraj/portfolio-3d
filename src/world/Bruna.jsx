@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo, useLayoutEffect } from 'react'
-import { useGLTF, useAnimations } from '@react-three/drei'
+import { useGLTF, useAnimations, useTexture } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { sampleHeight } from './terrain'
@@ -20,11 +20,11 @@ const URL = '/dog_walk.glb'
 const SCALE = 243
 // El modelo mira a +x; restamos π/2 al rumbo para que el hocico apunte al avance.
 const FACE_OFFSET = Math.PI / 2
-// La textura del pelaje trae líneas más oscuras en cabeza y lomo; teñirla deja
-// SIEMPRE ese contraste (cuerpo más claro que las líneas). Para que líneas y
-// pelaje sean EL MISMO color, usamos un color sólido (sin mapa): un gris oscuro
-// uniforme en todo el cuerpo.
-const FUR = '#262931'
+// Textura de pelaje editada (scripts/make-dog-fur.mjs): el gris del pelaje se
+// aplanó a un tono uniforme (sin las líneas oscuras de lomo/cabeza) PERO se
+// conservaron los naranjas (orejas/hocico/patas) y los ojos. La usamos como mapa
+// de color, apagando el emisivo (que volvía a dibujar las líneas) y en mate.
+const FUR_TEX = '/dog_fur.png'
 
 const WALK_SPEED = 2.7 // u/s (trote de perro, algo más vivo que el gato)
 const ANIM_TS = 1.25 // velocidad del clip de caminar
@@ -60,6 +60,7 @@ export function Bruna() {
     [animations]
   )
   const { actions } = useAnimations(clips, group)
+  const furTex = useTexture(FUR_TEX)
   const walk = useRef(null)
   const st = useRef({ mode: 'pause', tx: 0, tz: 0, timer: 1, walking: false })
   const phase = useMemo(() => Math.random() * Math.PI * 2, [])
@@ -68,30 +69,33 @@ export function Bruna() {
   const modalOpen = useStore((s) => s.active !== null)
 
   useLayoutEffect(() => {
+    // La textura editada respeta la convención glTF (sin voltear, color sRGB).
+    furTex.flipY = false
+    furTex.colorSpace = THREE.SRGBColorSpace
+    furTex.needsUpdate = true
     scene.traverse((o) => {
       if (o.isMesh || o.isSkinnedMesh) {
         o.castShadow = true
         o.receiveShadow = false
         o.frustumCulled = false
-        // Pelaje gris oscuro UNIFORME. El modelo traía el detalle del pelaje (las
-        // líneas) en DOS sitios: el mapa de color base y un mapa EMISIVO (con
-        // emissiveFactor blanco) que lo sumaba por encima sin importar la luz —por
-        // eso las líneas seguían marcándose—. Quitamos ambos, apagamos el emisivo,
-        // pasamos a material mate (metalness 0) y usamos un color sólido. Clonamos
-        // el material para no tocar la caché de useGLTF.
+        // El detalle del pelaje (líneas) venía en el mapa de color base Y en un
+        // mapa EMISIVO (factor blanco) que lo sumaba por encima sin importar la
+        // luz. Usamos la textura editada (pelaje gris uniforme, conservando
+        // naranjas y ojos) como color, APAGAMOS el emisivo y vamos en mate.
+        // Clonamos el material para no tocar la caché de useGLTF.
         if (o.material) {
           o.material = o.material.clone()
-          o.material.map = null
+          o.material.map = furTex
           o.material.emissiveMap = null
           if (o.material.emissive) o.material.emissive.set('#000000')
           o.material.metalness = 0
           o.material.roughness = 1
-          o.material.color.set(FUR)
+          o.material.color.set('#ffffff')
           o.material.needsUpdate = true
         }
       }
     })
-  }, [scene])
+  }, [scene, furTex])
 
   const pickTarget = () => {
     const ang = Math.random() * Math.PI * 2
@@ -196,3 +200,4 @@ export function Bruna() {
 }
 
 useGLTF.preload(URL)
+useTexture.preload(FUR_TEX)
