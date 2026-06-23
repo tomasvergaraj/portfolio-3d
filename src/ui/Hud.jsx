@@ -2,6 +2,7 @@ import React from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useStore } from '../store'
 import { STATIONS } from '../data/stations'
+import { Minimap } from './Minimap'
 
 export function Hud({ onOpenMenu }) {
   const nearby = useStore((s) => s.nearby)
@@ -57,6 +58,9 @@ export function Hud({ onOpenMenu }) {
           </motion.button>
         )}
       </AnimatePresence>
+
+      {/* Minimapa / radar de navegación (esquina) */}
+      <Minimap />
     </div>
   )
 }
