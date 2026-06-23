@@ -1,5 +1,5 @@
 import React, { Suspense, useRef, useEffect } from 'react'
-import { useThree } from '@react-three/fiber'
+import { useThree, useFrame } from '@react-three/fiber'
 import { Environment, Sparkles } from '@react-three/drei'
 import { Island } from './Island'
 import { Walkway } from './Walkway'
@@ -19,6 +19,8 @@ import { Leaves, DayNight, Butterflies, Fireflies, Birds } from './Ambiance'
 import { Lanterns } from './Lanterns'
 import { Confetti } from './Confetti'
 import { Dust } from './Dust'
+import { beginReveal } from './reveal'
+import { useStore } from '../store'
 import { STATIONS, stationPosition } from '../data/stations'
 
 export function Scene({ reducedMotion = false }) {
@@ -28,6 +30,10 @@ export function Scene({ reducedMotion = false }) {
   useEffect(() => {
     if (import.meta.env?.DEV && typeof window !== 'undefined') window.__gl = gl
   }, [gl])
+  // Arranca el reveal de entrada cuando el mundo queda listo (los props brotan).
+  useFrame((state) => {
+    if (useStore.getState().ready) beginReveal(state.clock.elapsedTime)
+  })
   return (
     <>
       {/* Domo de cielo con gradiente (cenit → horizonte) y niebla afinada al

@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { worldState } from './worldState'
 import { sampleHeight } from './terrain'
+import { revealFactor } from './reveal'
 
 // Faroles que flanquean la plaza y ENCIENDEN con el atardecer (leen worldState.dusk,
 // que escribe DayNight). Cohesionan con el ciclo día/noche, las luciérnagas y la
@@ -19,6 +20,7 @@ const DARK = '#2f2a26'
 export function Lanterns() {
   const heads = useRef([])
   const glows = useRef([])
+  const groups = useRef([])
 
   const posts = useMemo(
     () =>
@@ -35,18 +37,22 @@ export function Lanterns() {
     const t = state.clock.elapsedTime
     const dusk = worldState.dusk
     for (let i = 0; i < posts.length; i++) {
-      const flick = 0.9 + 0.1 * Math.sin(t * 7 + posts[i].phase)
+      const p = posts[i]
+      const flick = 0.9 + 0.1 * Math.sin(t * 7 + p.phase)
       const hm = heads.current[i]
       if (hm) hm.emissiveIntensity = (0.12 + dusk * 2.6) * flick
       const gm = glows.current[i]
       if (gm) gm.opacity = dusk * 0.3 * flick
+      // Reveal de entrada (brota con el resto de los props).
+      const g = groups.current[i]
+      if (g) g.scale.setScalar(revealFactor(t, Math.hypot(p.x, p.z)))
     }
   })
 
   return (
     <group>
       {posts.map((p, i) => (
-        <group key={i} position={[p.x, p.y, p.z]}>
+        <group key={i} ref={(el) => (groups.current[i] = el)} position={[p.x, p.y, p.z]}>
           {/* Poste */}
           <mesh castShadow position={[0, 0.75, 0]}>
             <cylinderGeometry args={[0.05, 0.07, 1.5, 8]} />

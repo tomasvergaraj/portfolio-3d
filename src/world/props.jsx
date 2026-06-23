@@ -4,6 +4,7 @@ import { useFrame, useLoader } from '@react-three/fiber'
 import { OBJLoader } from 'three-stdlib'
 import * as THREE from 'three'
 import { sampleWind } from './wind'
+import { revealFactor } from './reveal'
 
 // ─────────────────────────────────────────────────────────────────────────
 // Cargador genérico de props 3D (GLB, FBX u OBJ) con auto-ajuste: como los
@@ -60,7 +61,10 @@ function Placed({ source, position, targetH, scaleMul = 1, rot = 0, groundY = GR
 
   const euler = Array.isArray(rot) ? rot : [0, rot || 0, 0]
   const innerRef = useRef()
+  const outerRef = useRef()
   const phase = useMemo(() => Math.random() * Math.PI * 2, [])
+  // Distancia al centro: ordena la onda de aparición (el centro brota primero).
+  const dist = Math.hypot(position[0], position[2])
 
   const { s, baseLift } = useMemo(() => {
     model.updateMatrixWorld(true) // aplica los transforms internos del nodo
@@ -76,8 +80,11 @@ function Placed({ source, position, targetH, scaleMul = 1, rot = 0, groundY = GR
   // copa se inclina hacia donde sopla (lean) y aletea con la racha (flutter); al
   // girar lentamente la dirección del viento, los árboles se reorientan con él.
   useFrame((state) => {
-    if (!sway || !innerRef.current) return
     const t = state.clock.elapsedTime
+    // Reveal de entrada: el prop brota escalando desde 0 con un pop, escalonado
+    // por su distancia al centro. Tras completarse queda en su escala normal.
+    if (outerRef.current) outerRef.current.scale.setScalar(s * revealFactor(t, dist))
+    if (!sway || !innerRef.current) return
     const w = sampleWind(t)
     const gust = 0.5 + w.strength
     const lean = sway * (0.7 + w.strength) * 1.2
@@ -88,7 +95,7 @@ function Placed({ source, position, targetH, scaleMul = 1, rot = 0, groundY = GR
   })
 
   return (
-    <group position={[position[0], groundY, position[2]]} rotation={[0, euler[1], 0]} scale={s}>
+    <group ref={outerRef} position={[position[0], groundY, position[2]]} rotation={[0, euler[1], 0]} scale={s}>
       {/* Inclinación (x/z) alrededor del propio modelo, ya apoyado en el suelo */}
       <group ref={innerRef} rotation={[euler[0], 0, euler[2]]}>
         <primitive object={model} position={[0, baseLift, 0]} />
