@@ -38,7 +38,9 @@ export function Pascual() {
   const fbx = useFBX(URL)
   const { actions } = useAnimations(fbx.animations, group)
   const walk = useRef(null)
+  const breath = useRef()
   const st = useRef({ mode: 'pause', tx: 0, tz: 0, timer: 1, walking: false })
+  const phase = useMemo(() => Math.random() * Math.PI * 2, [])
   const [hovered, setHovered] = useState(false)
   const focused = useStore((s) => s.focusPet === 'pascual')
   const modalOpen = useStore((s) => s.active !== null)
@@ -85,16 +87,25 @@ export function Pascual() {
     return () => a?.stop()
   }, [actions])
 
-  useFrame((_, dt) => {
+  useFrame((state, dt) => {
     const g = group.current
     const a = walk.current
     if (!g) return
     const d = Math.min(dt, 0.05)
     const s = st.current
+    const t = state.clock.elapsedTime
 
     // Asienta al gato sobre el relieve y comparte su posición (para el zoom).
     g.position.y = sampleHeight(g.position.x, g.position.z)
     petPos.pascual.copy(g.position)
+
+    // Respiración: leve sube/baja del pecho, marcada en reposo (que no se sienta
+    // estático) y tenue al caminar.
+    if (breath.current) {
+      const rest = s.mode === 'pause' ? 1 : 0.3
+      const b = rest * 0.04 * (0.5 + 0.5 * Math.sin(t * 1.9 + phase))
+      breath.current.scale.set(1 - b * 0.5, 1 + b, 1 - b * 0.5)
+    }
 
     if (s.mode === 'pause') {
       if (a && s.walking) {
@@ -146,8 +157,10 @@ export function Pascual() {
         useStore.getState().setFocusPet('pascual')
       }}
     >
-      <group scale={scale}>
-        <primitive object={fbx} position={[0, lift, 0]} rotation={[0, 0, 0]} />
+      <group ref={breath}>
+        <group scale={scale}>
+          <primitive object={fbx} position={[0, lift, 0]} rotation={[0, 0, 0]} />
+        </group>
       </group>
       <PetLabel name="Pascual" show={(hovered || focused) && !modalOpen} />
     </group>
