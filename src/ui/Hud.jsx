@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useStore } from '../store'
 import { STATIONS } from '../data/stations'
 import { Minimap } from './Minimap'
+import { Achievements } from './Achievements'
 
 export function Hud({ onOpenMenu }) {
   const nearby = useStore((s) => s.nearby)
@@ -14,14 +15,17 @@ export function Hud({ onOpenMenu }) {
   return (
     <div className="hud" aria-hidden={hidden}>
       <div className="topbar">
-        <div className="brand">
-          <span className="logo">
-            <img src="/logo.png" alt="Tomás Vergara" />
-          </span>
-          <span className="who">
-            <b>Tomás Vergara</b>
-            <span>Desarrollador full-stack · Quillota</span>
-          </span>
+        <div className="topbar-left">
+          <div className="brand">
+            <span className="logo">
+              <img src="/logo.png" alt="Tomás Vergara" />
+            </span>
+            <span className="who">
+              <b>Tomás Vergara</b>
+              <span>Desarrollador full-stack · Quillota</span>
+            </span>
+          </div>
+          <Achievements />
         </div>
         <button className="menu-btn" onClick={onOpenMenu}>
           ☰ Secciones

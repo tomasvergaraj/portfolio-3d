@@ -78,7 +78,12 @@ Screenshots antes/después en `screenshots/iterN-*` (ignorados por git).
 - **Cambio:** `src/store.js` rastrea `visited` (ids abiertos) en `open`/`toggle` y expone `achievementN` + `unlockAchievement` (idempotente). `src/App.jsx` detecta cuando se visitaron las 5 secciones y, una vez por sesión, dispara el desbloqueo + confeti (`celebrate`) + fanfarria. Nuevo `src/ui/Achievement.jsx`: toast dorado con insignia de trofeo, auto-descarte (5.6 s), z-index 70 para flotar sobre el panel abierto. Estilos `.ach*` en `src/styles.css`.
 - **Efecto:** al abrir las 5 estaciones aparece el toast "Explorador — visitaste las 5 secciones" con confeti y fanfarria. Verificado por Playwright (toast sobre panel + confeti en el mundo, sin errores de consola).
 
+## Iteración 108 — Logros VISIBLES: trofeo con progreso + panel
+- **Problema (reportado):** el logro de la iter 107 era invisible salvo un toast único al completar las 5; no se veía progreso ni una lista de logros.
+- **Cambio:** nuevo `src/ui/Achievements.jsx` — botón-trofeo en la barra superior (junto al brand) que muestra `N/5` siempre visible y, al pulsarlo, despliega un panel con el logro "Explorador", barra de progreso y checklist de las 5 secciones (visitadas con color + ✓, pendientes atenuadas). Al completar, el trofeo y la medalla se vuelven dorados. Wireado en `src/ui/Hud.jsx` (nuevo `.topbar-left`); estilos `.ach-btn`/`.ach-pop`/`.ach-list` en `src/styles.css`. El toast + confeti + fanfarria de la iter 107 se conservan.
+- **Efecto:** el progreso es visible desde la primera sección; el panel lista qué falta. Verificado por Playwright en escritorio (0/5, 2/5, 5/5 dorado + toast + popover) y en ancho de móvil (390px) sin desbordar el topbar.
+
 ---
-**Nota:** la bitácora real continúa en los commits `iter N` de git (vamos en iter 107); esta lista quedó detallada hasta la 13.
+**Nota:** la bitácora real continúa en los commits `iter N` de git (vamos en iter 108); esta lista quedó detallada hasta la 13.
 
 **Estado del loop:** 12 iteraciones completadas. Visual: cielo, luz, sombras de contacto, agua, atmósfera. Jugabilidad/bugs: avatar y mascota asentados sobre el suelo, sprint con Shift y con joystick a fondo, mascota mirando hacia donde avanza, mascota que galopa al correr, etiquetas 2D ocultas con el modal, cámara cinematográfica al entrar/salir de secciones. **Pendiente que requiere asset externo:** cambiar el avatar de primitivas por un modelo `.glb` riggeado (Mixamo) — el proxy bloquea descargas, así que el usuario debe aportar el archivo en `public/`. También opcional: HDRI local para reflejos sin depender del CDN.

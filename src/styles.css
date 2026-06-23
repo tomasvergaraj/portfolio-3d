@@ -189,6 +189,162 @@ button {
   border-color: var(--accent);
 }
 
+/* Indicador de logros (barra superior, junto al brand) */
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ach-hud {
+  position: relative;
+}
+.ach-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(251, 248, 242, 0.82);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  padding: 9px 13px;
+  border-radius: 12px;
+  box-shadow: 0 10px 26px -16px rgba(20, 30, 46, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.ach-btn:hover {
+  border-color: #d6a84e;
+  color: var(--ink);
+}
+.ach-btn-count {
+  font-family: "JetBrains Mono";
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.ach-btn.is-complete {
+  color: #b4801f;
+  border-color: rgba(214, 168, 78, 0.7);
+  background: linear-gradient(180deg, rgba(255, 250, 238, 0.9), rgba(252, 244, 226, 0.86));
+  box-shadow: 0 10px 26px -14px rgba(150, 105, 25, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+.ach-btn.is-complete .ach-btn-count {
+  color: #b4801f;
+}
+
+/* Panel desplegable de logros */
+.ach-pop {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  width: 250px;
+  z-index: 26;
+  transform-origin: top left;
+  background: rgba(251, 248, 242, 0.96);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.ach-pop-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 12px;
+}
+.ach-pop-medal {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: #fff;
+  background: var(--ink-soft);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+.ach-pop-medal.is-complete {
+  background: linear-gradient(150deg, #f4c97a 0%, #e0a86b 48%, #c98a3e 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32), 0 4px 12px -4px rgba(180, 120, 30, 0.6);
+}
+.ach-pop-meta {
+  line-height: 1.2;
+}
+.ach-pop-meta b {
+  font-family: "Space Grotesk";
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+  display: block;
+}
+.ach-pop-meta small {
+  font-family: "JetBrains Mono";
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+}
+.ach-progress {
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(20, 30, 46, 0.08);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.ach-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #e0a86b, #c98a3e);
+  transition: width 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.ach-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ach-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 2px;
+  opacity: 0.45;
+  transition: opacity 0.2s ease;
+}
+.ach-list li.is-on {
+  opacity: 1;
+}
+.ach-li-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: rgba(20, 30, 46, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(20, 30, 46, 0.08);
+}
+.ach-list li.is-on .ach-li-dot {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+.ach-li-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  flex: 1;
+}
+.ach-li-check {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4f9e54;
+}
+
 /* Pista de control y prompt de proximidad */
 .hint {
   position: absolute;
