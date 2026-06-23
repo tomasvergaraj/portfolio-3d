@@ -302,7 +302,7 @@ button {
 .minimap {
   position: fixed;
   right: 24px;
-  bottom: 26px;
+  top: 72px; /* bajo el botón "Secciones"; libre del prompt "Entrar" (abajo) */
   z-index: 21;
   border-radius: 50%;
   background: rgba(251, 248, 242, 0.78);
@@ -375,14 +375,6 @@ button {
   z-index: 4;
   will-change: transform;
 }
-/* En táctil el botón de acción ocupa la esquina inferior derecha: subimos el
-   radar bajo el botón de secciones. */
-body.has-touch .minimap {
-  bottom: auto;
-  top: 78px;
-  right: 20px;
-}
-
 /* =========================================================================
    PANEL DE ESTACIÓN (página del portafolio)
    ========================================================================= */

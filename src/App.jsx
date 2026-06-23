@@ -10,10 +10,12 @@ import { Loader } from './ui/Loader'
 import { AudioToggle } from './ui/AudioToggle'
 import { Notification } from './ui/Notification'
 import { useKeyboard } from './controls/useKeyboard'
+import { useDeepLinks } from './useDeepLinks'
 import { useStore } from './store'
 
 export default function App() {
   useKeyboard()
+  useDeepLinks()
   const reduce = useReducedMotion()
   const [menu, setMenu] = useState(false)
   const openStation = useStore((s) => s.open)
