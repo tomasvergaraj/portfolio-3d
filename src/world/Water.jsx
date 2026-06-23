@@ -14,8 +14,10 @@ import { SHORE_R, WATER_Y } from './terrain'
 const SIZE = 240
 const SEG = 96
 
-// Dirección del sol = la key direccional de la escena ([14,20,8]).
-const SUN = new THREE.Vector3(14, 20, 8).normalize()
+// Dirección del sol = la key direccional de la escena ([16,13,7]). Mantenerla en
+// sintonía hace que el camino de destellos caiga hacia el mismo sol que proyecta
+// las sombras.
+const SUN = new THREE.Vector3(16, 13, 7).normalize()
 
 export function Water({ animate = true }) {
   const material = useMemo(() => {
@@ -27,6 +29,7 @@ export function Water({ animate = true }) {
         uWindDir: { value: new THREE.Vector2(1, 0) },
         uStrength: { value: 0.5 },
         uSun: { value: SUN.clone() },
+        uSunCol: { value: new THREE.Color('#ffdca0') }, // destello cálido del sol
         uShoreR: { value: SHORE_R },
         uShallow: { value: new THREE.Color('#6fd0c8') },
         uDeep: { value: new THREE.Color('#1f5f86') },
@@ -78,6 +81,7 @@ export function Water({ animate = true }) {
         uniform float uTime;
         uniform float uShoreR;
         uniform vec3 uSun;
+        uniform vec3 uSunCol;
         uniform vec3 uShallow;
         uniform vec3 uDeep;
         uniform vec3 uFoam;
@@ -98,19 +102,25 @@ export function Water({ animate = true }) {
           float diff = clamp(dot(n, L), 0.0, 1.0);
           col *= 0.66 + 0.42 * diff;
 
-          // Destello especular del sol (sparkle sobre las crestas).
+          // Reflejo del sol sobre el agua: un camino de destellos hacia el sol.
+          // Halo ancho (el "sendero" alargado) + chispas finas que titilan (mar
+          // que brilla). Ambas con el color cálido del sol; sólo aparecen en la
+          // zona donde la reflexión apunta al sol, así que forman el sendero.
           vec3 V = normalize(cameraPosition - vWorldPos);
           vec3 H = normalize(L + V);
-          float spec = pow(clamp(dot(n, H), 0.0, 1.0), 70.0);
-          col += spec * 0.7;
+          float ndh = clamp(dot(n, H), 0.0, 1.0);
+          float glow = pow(ndh, 14.0);
+          float tw = 0.5 + 0.5 * sin(vWorldPos.x * 3.3 + vWorldPos.z * 4.1 + uTime * 7.0);
+          float glint = pow(ndh, 150.0) * (0.35 + 0.65 * tw);
+          col += uSunCol * (glow * 0.45 + glint * 2.0);
 
           // Espuma: en las crestas + una banda de rompiente en la orilla que
           // entra y sale con el tiempo y se rompe con una onda que la recorre.
-          float crest = smoothstep(0.11, 0.2, vCrest);
+          float crest = smoothstep(0.15, 0.27, vCrest);
           float shoreLine = uShoreR + sin(uTime * 0.8) * 0.7;
           float band = 1.0 - smoothstep(0.0, 2.6, abs(r - shoreLine));
           float wash = 0.5 + 0.5 * sin(uTime * 1.6 - r * 0.6);
-          float foam = clamp(crest * 0.55 + band * wash * 0.95, 0.0, 1.0);
+          float foam = clamp(crest * 0.38 + band * wash * 0.95, 0.0, 1.0);
           col = mix(col, uFoam, foam * 0.85);
 
           gl_FragColor = vec4(col, 0.95);
