@@ -73,12 +73,19 @@ export function Bruna() {
         o.castShadow = true
         o.receiveShadow = false
         o.frustumCulled = false
-        // Pelaje gris oscuro UNIFORME: quitamos la textura (que traía las líneas
-        // claras/oscuras) y usamos un color sólido, así líneas y pelaje quedan del
-        // mismo tono. Clonamos el material para no tocar la caché de useGLTF.
+        // Pelaje gris oscuro UNIFORME. El modelo traía el detalle del pelaje (las
+        // líneas) en DOS sitios: el mapa de color base y un mapa EMISIVO (con
+        // emissiveFactor blanco) que lo sumaba por encima sin importar la luz —por
+        // eso las líneas seguían marcándose—. Quitamos ambos, apagamos el emisivo,
+        // pasamos a material mate (metalness 0) y usamos un color sólido. Clonamos
+        // el material para no tocar la caché de useGLTF.
         if (o.material) {
           o.material = o.material.clone()
           o.material.map = null
+          o.material.emissiveMap = null
+          if (o.material.emissive) o.material.emissive.set('#000000')
+          o.material.metalness = 0
+          o.material.roughness = 1
           o.material.color.set(FUR)
           o.material.needsUpdate = true
         }
