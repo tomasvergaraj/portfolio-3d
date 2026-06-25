@@ -14,6 +14,7 @@ import { FootTrail } from './FootTrail'
 import { AudioReactor } from './AudioReactor'
 import { Pascual } from './Pascual'
 import { Bruna } from './Bruna'
+import { Chanel } from './Chanel'
 import { StationMarker } from './StationMarker'
 import { Effects } from './Effects'
 import { Leaves, DayNight, Butterflies, Fireflies, Birds } from './Ambiance'
@@ -104,7 +105,8 @@ export function Scene({ reducedMotion = false }) {
       <FootTrail reducedMotion={reducedMotion} />
       <AudioReactor />
 
-      {/* Mascotas que deambulan por la isla: Pascual (gato) y Bruna (perra) */}
+      {/* Mascotas que deambulan por la isla: Pascual (gato), Bruna (perra) y
+          Chanel (gata) */}
       <ModelBoundary fallback={null}>
         <Suspense fallback={null}>
           <Pascual />
@@ -113,6 +115,11 @@ export function Scene({ reducedMotion = false }) {
       <ModelBoundary fallback={null}>
         <Suspense fallback={null}>
           <Bruna />
+        </Suspense>
+      </ModelBoundary>
+      <ModelBoundary fallback={null}>
+        <Suspense fallback={null}>
+          <Chanel />
         </Suspense>
       </ModelBoundary>
       <Dust />

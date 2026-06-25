@@ -6,4 +6,5 @@ import * as THREE from 'three'
 export const petPos = {
   bruna: new THREE.Vector3(),
   pascual: new THREE.Vector3(),
+  chanel: new THREE.Vector3(),
 }
