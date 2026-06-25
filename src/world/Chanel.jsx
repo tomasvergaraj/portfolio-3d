@@ -15,17 +15,19 @@ import { PetLabel } from './PetLabel'
 //
 // El modelo viene de un FBX de Meshy (mismo pipeline Unreal que la perra). Se
 // convirtió a GLB y se comprimió (scripts/convert-chanel → optimize-avatar →
-// retex-chanel → public/chanel.glb). La textura base va como PNG SIN PÉRDIDA (el
-// JPEG metía bloques 8x8 sobre el pelaje) y además se EMPAREJÓ con
-// scripts/make-chanel-fur.mjs: el atlas de Meshy era un camuflaje irregular que
-// se veía "disparejo", así que se aplanó hacia un greige uniforme conservando los
-// rasgos (espíritu de make-dog-fur). Como la perra, el clip "Unreal Take" trae pistas de ESCALA en los
+// retex-chanel → public/chanel-v2.glb). La textura base son SUS COLORES
+// ORIGINALES (atigrados) horneados como PNG SIN PÉRDIDA a 1536: el JPEG metía
+// bloques 8x8 ("colores cuadrados") sobre el pelaje camo de alta frecuencia, y
+// bajar la resolución/aplanar el manto lo empeoraba. Como la perra, el clip
+// "Unreal Take" trae pistas de ESCALA en los
 // huesos (Hips con escala constante) que ENCOGEN al animar → se eliminan abajo y
 // la marcha se conserva (traslación + rotación).
-const URL = '/chanel.glb'
-// El bbox de bind incluye la cola levantada → infla el alto; subimos el objetivo
-// para que el CUERPO quede a una escala parecida a la de Pascual.
-const TARGET_H = 1.3 // alto objetivo de la gata (auto-escala desde el bbox de bind)
+// Nombre versionado (-v2): fuerza recarga del asset (useGLTF y el navegador
+// cachean por URL; al cambiar la textura, el archivo viejo quedaba en caché).
+const URL = '/chanel-v2.glb'
+// El bbox de bind incluye la cola levantada → infla el alto. TARGET_H ajusta el
+// tamaño en el mundo (la gata es algo más pequeña que la perra y que Pascual).
+const TARGET_H = 1.05 // alto objetivo de la gata (auto-escala desde el bbox de bind)
 // El modelo mira nativamente a +z (verificado en el visor), igual que Pascual:
 // el rumbo se aplica directo, sin desfase.
 const FACE_OFFSET = 0
