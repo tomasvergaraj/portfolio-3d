@@ -15,9 +15,11 @@ import { PetLabel } from './PetLabel'
 //
 // El modelo viene de un FBX de Meshy (mismo pipeline Unreal que la perra). Se
 // convirtió a GLB y se comprimió (scripts/convert-chanel → optimize-avatar →
-// retex-chanel → public/chanel.glb). La textura base va como PNG SIN PÉRDIDA: el
-// JPEG metía bloques 8x8 ("colores cuadrados") sobre el pelaje camo de alta
-// frecuencia. Como la perra, el clip "Unreal Take" trae pistas de ESCALA en los
+// retex-chanel → public/chanel.glb). La textura base va como PNG SIN PÉRDIDA (el
+// JPEG metía bloques 8x8 sobre el pelaje) y además se EMPAREJÓ con
+// scripts/make-chanel-fur.mjs: el atlas de Meshy era un camuflaje irregular que
+// se veía "disparejo", así que se aplanó hacia un greige uniforme conservando los
+// rasgos (espíritu de make-dog-fur). Como la perra, el clip "Unreal Take" trae pistas de ESCALA en los
 // huesos (Hips con escala constante) que ENCOGEN al animar → se eliminan abajo y
 // la marcha se conserva (traslación + rotación).
 const URL = '/chanel.glb'
