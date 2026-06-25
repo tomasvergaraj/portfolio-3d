@@ -32,6 +32,12 @@ const TARGET_H = 1.05 // alto objetivo de la gata (auto-escala desde el bbox de 
 // el rumbo se aplica directo, sin desfase.
 const FACE_OFFSET = 0
 
+// El sol cálido del mundo (intensity 1.7) + el bloom (umbral 0.68) quemaban los
+// parches CLAROS de su pelaje atigrado → se veía "disparejo"/amarillo en el mundo
+// (aunque en luz neutra está bien). Atenuamos el albedo para que el patrón original
+// se lea sin quemarse, como en la textura original.
+const ALBEDO = 0.6 // multiplicador de color del manto (1 = textura tal cual)
+
 const WALK_SPEED = 1.9 // u/s (paso de gato, algo más calmo que la perra)
 const ANIM_TS = 1.1 // velocidad del clip de caminar
 const WANDER_MIN = 4
@@ -96,6 +102,7 @@ export function Chanel() {
           o.material = o.material.clone()
           o.material.metalness = 0
           o.material.roughness = 1
+          o.material.color.setScalar(ALBEDO) // atenúa para no quemarse bajo el sol
           o.material.needsUpdate = true
         }
       }
