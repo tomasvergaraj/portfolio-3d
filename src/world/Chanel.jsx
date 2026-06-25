@@ -24,9 +24,11 @@ import { PetLabel } from './PetLabel'
 // la marcha se conserva (traslación + rotación).
 // Nombre versionado (-v3): fuerza recarga del asset (useGLTF y el navegador
 // cachean por URL; al cambiar la textura, el archivo viejo quedaba en caché).
-// v3 = color base SUAVIZADO (scripts/make-chanel-soft) para que el patrón se vea
-// orgánico y no en parches duros ("cuadrados") por la UV de Meshy.
-const URL = '/chanel-v3.glb'
+// v4 = color base GRADUADO hacia la gata real (tabby marrón cálida con marcas
+// oscuras): scripts/make-chanel-tabby (warm + saturación + contraste + rolloff de
+// altas luces) sobre el atlas suavizado. (El patrón es camo de Meshy, no rayas
+// clásicas: es lo más cercano sin repintar la textura a mano.)
+const URL = '/chanel-v4.glb'
 // Mapas de detalle de Meshy (normal + rugosidad): SIN ellos, los parches del
 // color base se ven planos y "cuadrados"; CON ellos el pelaje recupera el detalle
 // orgánico (pelo) del modelo original. Se aplican en runtime sobre las UVs del GLB.
