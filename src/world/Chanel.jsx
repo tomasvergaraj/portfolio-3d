@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo, useLayoutEffect } from 'react'
-import { useGLTF, useAnimations } from '@react-three/drei'
+import { useGLTF, useAnimations, useTexture } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { sampleHeight } from './terrain'
@@ -22,9 +22,16 @@ import { PetLabel } from './PetLabel'
 // "Unreal Take" trae pistas de ESCALA en los
 // huesos (Hips con escala constante) que ENCOGEN al animar → se eliminan abajo y
 // la marcha se conserva (traslación + rotación).
-// Nombre versionado (-v2): fuerza recarga del asset (useGLTF y el navegador
+// Nombre versionado (-v3): fuerza recarga del asset (useGLTF y el navegador
 // cachean por URL; al cambiar la textura, el archivo viejo quedaba en caché).
-const URL = '/chanel-v2.glb'
+// v3 = color base SUAVIZADO (scripts/make-chanel-soft) para que el patrón se vea
+// orgánico y no en parches duros ("cuadrados") por la UV de Meshy.
+const URL = '/chanel-v3.glb'
+// Mapas de detalle de Meshy (normal + rugosidad): SIN ellos, los parches del
+// color base se ven planos y "cuadrados"; CON ellos el pelaje recupera el detalle
+// orgánico (pelo) del modelo original. Se aplican en runtime sobre las UVs del GLB.
+const NORMAL_URL = '/chanel_normal.png'
+const ROUGH_URL = '/chanel_rough.png'
 // El bbox de bind incluye la cola levantada → infla el alto. TARGET_H ajusta el
 // tamaño en el mundo (la gata es algo más pequeña que la perra y que Pascual).
 const TARGET_H = 1.05 // alto objetivo de la gata (auto-escala desde el bbox de bind)
@@ -72,6 +79,7 @@ export function Chanel() {
     [animations]
   )
   const { actions } = useAnimations(clips, group)
+  const [normalTex, roughTex] = useTexture([NORMAL_URL, ROUGH_URL])
   const walk = useRef(null)
   const st = useRef({ mode: 'pause', tx: 0, tz: 0, timer: 1, walking: false })
   const phase = useMemo(() => Math.random() * Math.PI * 2, [])
@@ -90,24 +98,35 @@ export function Chanel() {
   }, [scene])
 
   useLayoutEffect(() => {
+    // Los mapas se aplican sobre las UVs del GLB (convención glTF → flipY=false) y
+    // en espacio lineal (no son color). El normal da el relieve del pelo; el de
+    // rugosidad rompe el brillo en clústers, devolviendo el aspecto orgánico.
+    for (const t of [normalTex, roughTex]) {
+      t.flipY = false
+      t.colorSpace = THREE.NoColorSpace
+      t.needsUpdate = true
+    }
     scene.traverse((o) => {
       if (o.isMesh || o.isSkinnedMesh) {
         o.castShadow = true
         o.receiveShadow = false
         o.frustumCulled = false
-        // Textura base ya horneada en el GLB; la dejamos mate (sin brillo) para
-        // que cuadre con el resto del mundo low-poly. Clonamos el material para
-        // no tocar la caché de useGLTF.
+        // Color base ya horneado en el GLB; le sumamos normal + rugosidad de Meshy
+        // para el detalle de pelo (sin ellos se ve plano/"cuadrado"). Clonamos el
+        // material para no tocar la caché de useGLTF.
         if (o.material) {
           o.material = o.material.clone()
           o.material.metalness = 0
           o.material.roughness = 1
+          o.material.roughnessMap = roughTex
+          o.material.normalMap = normalTex
+          o.material.normalScale = new THREE.Vector2(0.7, 0.7)
           o.material.color.setScalar(ALBEDO) // atenúa para no quemarse bajo el sol
           o.material.needsUpdate = true
         }
       }
     })
-  }, [scene])
+  }, [scene, normalTex, roughTex])
 
   const pickTarget = () => {
     const ang = Math.random() * Math.PI * 2
@@ -212,3 +231,5 @@ export function Chanel() {
 }
 
 useGLTF.preload(URL)
+useTexture.preload(NORMAL_URL)
+useTexture.preload(ROUGH_URL)
