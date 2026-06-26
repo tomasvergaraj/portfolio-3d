@@ -2,12 +2,25 @@ import { useEffect } from 'react'
 import { keys } from './input'
 import { useStore } from '../store'
 
+// True si el foco está en un campo editable (formulario de contacto, etc.).
+// Ahí el teclado pertenece al campo: hay que dejar pasar el espacio, w/a/s/d,
+// etc. con su comportamiento nativo en vez de mover al avatar o saltar.
+function isTypingTarget(el) {
+  if (!el) return false
+  const tag = el.tagName
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable
+}
+
 // Escucha el teclado a nivel de ventana. Las teclas de movimiento alimentan
 // el set compartido; E/Enter abre la estación cercana y Escape cierra.
 export function useKeyboard() {
   useEffect(() => {
     const down = (e) => {
       const k = e.key.toLowerCase()
+
+      // Mientras se escribe en un campo, el teclado es del campo. Sólo dejamos
+      // pasar Escape (para poder cerrar el panel desde cualquier lugar).
+      if (k !== 'escape' && isTypingTarget(e.target)) return
 
       // Acciones
       if (k === 'escape') {
