@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useStore } from '../store'
 import { STATIONS } from '../data/stations'
 import { StationIcon } from '../world/StationIcon'
+import { useMenuOverlay } from './useMenuOverlay'
 
 // Indicador de logros (idea del folio de Bruno Simon: recompensar explorar).
 // Vive en la barra superior: un botón-trofeo con el progreso `N/5` visible desde
@@ -24,6 +25,8 @@ function Trophy({ size = 17 }) {
 export function Achievements() {
   const visited = useStore((s) => s.visited)
   const [panel, setPanel] = useState(false)
+  // Con el panel de logros abierto, oculta las etiquetas flotantes del mundo 3D.
+  useMenuOverlay(panel)
   const done = visited.length
   const total = STATIONS.length
   const complete = done >= total

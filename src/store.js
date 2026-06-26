@@ -25,6 +25,10 @@ export const useStore = create((set, get) => ({
   confettiN: 0,
   // mascota enfocada por la cámara (zoom al hacer clic), o null
   focusPet: null,
+  // nº de menús/overlays de UI abiertos (menú de Secciones, popup de Logros…).
+  // Mientras sea > 0, el mundo 3D oculta las etiquetas flotantes que, al dibujarse
+  // con <Html> en el DOM, se colarían por encima de cualquier menú.
+  menusOpen: 0,
 
   setNearby: (id) => {
     if (get().nearby !== id) set({ nearby: id })
@@ -51,6 +55,9 @@ export const useStore = create((set, get) => ({
   clearFocusPet: () => {
     if (get().focusPet !== null) set({ focusPet: null })
   },
+  // Registro de menús/overlays abiertos (par enter/exit, robusto a menús simultáneos).
+  enterMenu: () => set((s) => ({ menusOpen: s.menusOpen + 1 })),
+  exitMenu: () => set((s) => ({ menusOpen: Math.max(0, s.menusOpen - 1) })),
 }))
 
 // En desarrollo, exponemos el store para que el script de captura (Playwright)

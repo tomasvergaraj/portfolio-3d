@@ -105,9 +105,9 @@ export function StationMarker({ station, position }) {
   const [hovered, setHovered] = useState(false)
   const nearby = useStore((s) => s.nearby === station.id)
   const open = useStore((s) => s.open)
-  // Con un panel abierto ocultamos las etiquetas 2D: si no, se cuelan por
-  // encima del modal (las dibuja <Html> en el DOM, fuera del lienzo).
-  const modalOpen = useStore((s) => s.active !== null)
+  // Con un panel o cualquier menú abierto ocultamos las etiquetas 2D: si no, se
+  // cuelan por encima del overlay (las dibuja <Html> en el DOM, fuera del lienzo).
+  const overlayOpen = useStore((s) => s.active !== null || s.menusOpen > 0)
   const hasModel = hasStationModel(station.id)
 
   useFrame((state) => {
@@ -189,8 +189,8 @@ export function StationMarker({ station, position }) {
         <meshBasicMaterial color={station.color} transparent opacity={0.18} toneMapped={false} />
       </mesh>
 
-      {/* Etiqueta flotante (oculta mientras hay un panel abierto) */}
-      {!modalOpen && (
+      {/* Etiqueta flotante (oculta mientras hay un panel o menú abierto) */}
+      {!overlayOpen && (
       <Html position={[0, 5.4, 0]} center distanceFactor={16} occlude={false} pointerEvents="none">
         <div
           style={{

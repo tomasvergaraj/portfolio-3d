@@ -2,8 +2,11 @@ import React from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { STATIONS } from '../data/stations'
 import { StationIcon } from '../world/StationIcon'
+import { useMenuOverlay } from './useMenuOverlay'
 
 export function SectionMenu({ openMenu, setOpenMenu, onPick }) {
+  // Mientras el menú está abierto, oculta las etiquetas flotantes del mundo 3D.
+  useMenuOverlay(openMenu)
   return (
     <AnimatePresence>
       {openMenu && (
