@@ -1,5 +1,15 @@
 import React from 'react'
+import emailjs from '@emailjs/browser'
 import { BrandIcon } from '../ui/BrandIcon'
+
+// Claves de EmailJS — las mismas del portafolio 2D (mismo servicio/plantilla, así
+// los correos llegan con el formato ya conocido). La public key de EmailJS está
+// pensada para vivir en el cliente; igualmente se puede sobreescribir por entorno
+// (VITE_EMAILJS_*) sin tocar el código. Los defaults garantizan que el deploy
+// funcione sin configurar variables en Vercel.
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_uovgy7p'
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_yverecl'
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '3XKJiU8u1UJFijKn8'
 
 // Datos de contacto reutilizados (alineados con el portafolio 2D, misma marca).
 export const CONTACT = {
@@ -14,29 +24,41 @@ export const CONTACT = {
   cv: '/CV_Tomas_Vergara_FullStack.pdf',
 }
 
-// Formulario de contacto controlado. Sin dependencias: envía abriendo el cliente
-// de correo con un borrador pre-rellenado (mailto). El JSX queda listo para
-// enchufar EmailJS más adelante (leyendo import.meta.env.VITE_EMAILJS_*) sin
-// rehacer la maquetación. Réplica del Contact.tsx del portafolio 2D.
+// Formulario de contacto controlado. Envía el correo automáticamente vía EmailJS
+// (sin abrir el cliente de correo del usuario) usando el mismo servicio/plantilla
+// que el portafolio 2D. Réplica del Contact.tsx del 2D.
 function ContactForm() {
   const [form, setForm] = React.useState({ name: '', email: '', subject: '', message: '' })
-  const [status, setStatus] = React.useState('idle') // idle | sending | sent
+  const [status, setStatus] = React.useState('idle') // idle | sending | success | error
   const onChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault()
     setStatus('sending')
-    const subject = form.subject || `Contacto desde el portafolio — ${form.name || 'sin nombre'}`
-    const body =
-      `Nombre: ${form.name}\n` +
-      `Email: ${form.email}\n\n` +
-      `${form.message}`
-    // Abre el cliente de correo con el mensaje listo (sin backend).
-    window.location.href =
-      `mailto:${CONTACT.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-    setStatus('sent')
-    setTimeout(() => setStatus('idle'), 6000)
+    try {
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          from_name: form.name,
+          from_email: form.email,
+          subject: form.subject,
+          message: form.message,
+          reply_to: form.email,
+        },
+        EMAILJS_PUBLIC_KEY
+      )
+      setStatus('success')
+      setForm({ name: '', email: '', subject: '', message: '' })
+    } catch (err) {
+      console.error('Error al enviar el correo:', err)
+      setStatus('error')
+    } finally {
+      setTimeout(() => setStatus('idle'), 6000)
+    }
   }
+
+  const sending = status === 'sending'
 
   return (
     <form className="contact-form" onSubmit={onSubmit}>
@@ -52,7 +74,7 @@ function ContactForm() {
       </div>
       <div className="form-group">
         <label className="form-label" htmlFor="cf-subject">Asunto</label>
-        <input id="cf-subject" name="subject" className="form-field" value={form.subject} onChange={onChange} placeholder="¿De qué quieres hablar?" />
+        <input id="cf-subject" name="subject" className="form-field" value={form.subject} onChange={onChange} required placeholder="¿De qué quieres hablar?" />
       </div>
       <div className="form-group">
         <label className="form-label" htmlFor="cf-message">Mensaje</label>
@@ -60,13 +82,16 @@ function ContactForm() {
       </div>
 
       <div aria-live="polite">
-        {status === 'sent' && (
-          <p className="form-status success">Te abrí tu cliente de correo con el mensaje listo. Si no se abrió, escríbeme a {CONTACT.email}.</p>
+        {status === 'success' && (
+          <p className="form-status success">Mensaje enviado. Te responderé pronto.</p>
+        )}
+        {status === 'error' && (
+          <p className="form-status error">Hubo un error. Intenta nuevamente o escríbeme directo a {CONTACT.email}.</p>
         )}
       </div>
 
-      <button type="submit" className="btn-submit" disabled={status === 'sending'} aria-busy={status === 'sending'}>
-        {status === 'sending' ? (
+      <button type="submit" className="btn-submit" disabled={sending} aria-busy={sending}>
+        {sending ? (
           <>
             <span className="spinner" aria-hidden="true" />
             Enviando
